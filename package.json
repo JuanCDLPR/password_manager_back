@@ -1,0 +1,11 @@
+{
+  "name": "password_manager_back",
+  "version": "1.0.0",
+  "description": "backen para un administrador personal de contraseñas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "MrLoop15 & WitcherKnigthDLP",
+  "license": "ISC"
+}
