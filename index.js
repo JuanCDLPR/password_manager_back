@@ -1,9 +1,15 @@
 const express = require("express");
 const cors = require("cors");
 const { config } = require("dotenv");
-config();
-const app = express();
+const { dbConnection } = require("./connection/config-mongo");
+
 const { usuarios } = require("./routes/usuarios.routes");
+
+config();
+
+const app = express();
+
+dbConnection();
 
 app.set("port", process.env.PORT || 3000);
 app.use(cors());
