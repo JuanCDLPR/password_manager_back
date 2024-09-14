@@ -94,4 +94,63 @@ const eliminar = async (req = request, res = response) => {
   }
 };
 
-module.exports = { insertar, listar, eliminar };
+const consultar = async (req = request, res = response) => {
+  try {
+    const { ID } = req.query;
+
+    const DatosPlataforma = await PlataformasModel.findById(ID);
+
+    if (!DatosPlataforma) {
+      return res
+        .status(200)
+        .json(
+          Respuesta(900, "OK", "No se encontro informacio de la plataforma", [])
+        );
+    }
+
+    return res
+      .status(200)
+      .json(Respuesta(200, "OK", "Eliminado correctamente", [DatosPlataforma]));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(Respuesta(500, "ERROR", "Error al eliminar", []));
+  }
+};
+
+const actualizar = async (req = request, res = response) => {
+  try {
+    const { id, nombre, url } = req.body;
+
+    const PlataformaActualizada = await PlataformasModel.findByIdAndUpdate(
+      id,
+      { name: nombre, url: url, actualizado: Date.now() },
+      { new: true }
+    );
+
+    if (!PlataformaActualizada) {
+      return res
+        .status(200)
+        .json(
+          Respuesta(
+            900,
+            "OK",
+            "No se encontro informacion de la plataforma",
+            []
+          )
+        );
+    }
+
+    return res
+      .status(200)
+      .json(Respuesta(200, "OK", "Actualizado correctamente", []));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(Respuesta(500, "ERROR", "Error al eliminar", []));
+  }
+};
+
+module.exports = { insertar, listar, eliminar, consultar, actualizar };
