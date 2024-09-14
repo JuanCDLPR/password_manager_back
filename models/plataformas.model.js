@@ -9,6 +9,14 @@ const PlataformasSchema = new Schema({
     type: String,
     required: false,
   },
+  fecha: {
+    type: Date,
+    default: Date.now,
+  },
+  actualizado: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = model("PLATAFORMAS", PlataformasSchema);
