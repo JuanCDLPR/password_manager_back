@@ -16,6 +16,11 @@ const validarJWT = (req = request, res = response, next) => {
       token,
       process.env.SEED_TOKEN
     );
+
+    //TODO validar los campos antes de dar el acceso en caso contrario rechazar la conexion
+    //TODO estos campos es el payload y validarlo contra base de datos para checar quq
+    //TODO  todo sea igual
+
     req.uid = id;
     req.user = user;
     req.pass = pass;
