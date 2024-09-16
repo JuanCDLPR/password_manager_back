@@ -52,6 +52,8 @@ const actualizar = async (req = request, res = response) => {
       { new: true }
     );
 
+    //TODO actualizar token ya que contiene el user y debe estar actualizado
+
     return res
       .status(200)
       .json(
@@ -65,7 +67,56 @@ const actualizar = async (req = request, res = response) => {
   }
 };
 
+const update_pass = async (req = request, res = response) => {
+  try {
+    const { uid } = req;
+    const { pass, rep_pass, old_pass } = req.body;
+
+    //console.log("body", req.body);
+
+    const DatosUsuario = await UsuariosModel.findById(uid);
+
+    if (!DatosUsuario) {
+      return res
+        .status(200)
+        .json(
+          Respuesta(900, "OK", "No se encontro informacio del usuario", [])
+        );
+    }
+
+    let UsuarioActualizar;
+
+    if (Decrypt(DatosUsuario.password) === old_pass) {
+      UsuarioActualizar = await UsuariosModel.findByIdAndUpdate(
+        uid,
+        { password: Encrypt(pass), actualizado: Date.now() },
+        { new: true }
+      );
+    } else {
+      return res
+        .status(200)
+        .json(Respuesta(900, "OK", "La informacion no es corecta", []));
+    }
+
+    const token = await generarJWT(
+      UsuarioActualizar.id,
+      UsuarioActualizar.user,
+      UsuarioActualizar.password
+    );
+
+    return res
+      .status(200)
+      .json(Respuesta(200, "OK", "Actualizado correctamente", [token]));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(Respuesta(500, "ERROR", "Error al actualizar", []));
+  }
+};
+
 module.exports = {
   consultar,
   actualizar,
+  update_pass,
 };
