@@ -5,9 +5,11 @@ const PlataformasModel = require("../models/plataformas.model");
 
 const insertar = async (req = request, res = response) => {
   try {
+    const { uid } = req;
     const { nombre, url } = req.body;
 
     const NewPlataforma = new PlataformasModel({
+      id_usuario: uid,
       name: nombre,
       url: url,
     });
@@ -29,6 +31,7 @@ const listar = async (req = request, res = response) => {
   try {
     //console.log(req.query);
     const { Order, query } = req.query;
+    const { uid } = req;
 
     let ordenamiento = {};
 
@@ -50,7 +53,9 @@ const listar = async (req = request, res = response) => {
     }
 
     const query_find =
-      query !== "" ? { name: { $regex: query, $options: "i" } } : {};
+      query !== ""
+        ? { name: { $regex: query, $options: "i" }, id_usuario: uid }
+        : { id_usuario: uid };
 
     const DataPlataformas = await PlataformasModel.find(query_find).sort(
       ordenamiento
