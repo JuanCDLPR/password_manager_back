@@ -90,7 +90,45 @@ const autentificarte = async (req = request, res = response) => {
   }
 };
 
+const refrescar_token = async (req = request, res = response) => {
+  try {
+    const { uid, user, pass } = req;
+    const { pass_confirm } = req.query;
+
+    console.log(req.query);
+
+    const DatosUsuario = await UsuariosModel.findById(uid);
+
+    if (!DatosUsuario) {
+      return res
+        .status(200)
+        .json(
+          Respuesta(901, "OK", "No se encontro informacio del usuario", [])
+        );
+    }
+
+    if (
+      Decrypt(DatosUsuario.password) !== pass &&
+      Decrypt(DatosUsuario.password) !== pass_confirm
+    ) {
+      return res
+        .status(200)
+        .json(Respuesta(902, "OK", "La contraseña no es correcta", []));
+    }
+
+    const token = await generarJWT(uid, user, pass);
+
+    return res
+      .status(200)
+      .json(Respuesta(200, "ok", "Refrescado correctamene", [token]));
+  } catch (error) {
+    return res
+      .status(500)
+      .json(Respuesta(500, "error", "error al registrar usuario", []));
+  }
+};
 module.exports = {
   registrar,
   autentificarte,
+  refrescar_token,
 };
