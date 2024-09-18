@@ -1,8 +1,9 @@
 const { response, request } = require("express");
 const jwt = require("jsonwebtoken");
 const { Respuesta } = require("../models/repuesta");
+const UsuariosModel = require("../models/usuarios.model");
 
-const validarJWT = (req = request, res = response, next) => {
+const validarJWT = async (req = request, res = response, next) => {
   const token = req.header("Administracion");
 
   if (!token) {
@@ -17,9 +18,34 @@ const validarJWT = (req = request, res = response, next) => {
       process.env.SEED_TOKEN
     );
 
-    //TODO validar los campos antes de dar el acceso en caso contrario rechazar la conexion
-    //TODO estos campos es el payload y validarlo contra base de datos para checar quq
-    //TODO  todo sea igual
+    const DatosUsuario = await UsuariosModel.findById(id);
+
+    if (!DatosUsuario) {
+      return res
+        .status(401)
+        .json(
+          Respuesta(401, "OK", "No se encontro informacion del usuario", [])
+        );
+    }
+
+    if (
+      DatosUsuario._id.toString() !== id ||
+      DatosUsuario.user !== user ||
+      DatosUsuario.password !== pass
+    ) {
+      return res
+        .status(401)
+        .json(
+          Respuesta(
+            401,
+            "OK",
+            "La informacion del usuario esta comprometida",
+            []
+          )
+        );
+    }
+
+    //console.log(DatosUsuario);
 
     req.uid = id;
     req.user = user;

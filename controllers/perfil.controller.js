@@ -52,12 +52,24 @@ const actualizar = async (req = request, res = response) => {
       { new: true }
     );
 
-    //TODO actualizar token ya que contiene el user y debe estar actualizado
+    const token = await generarJWT(
+      UsuarioActualizar.id,
+      UsuarioActualizar.user,
+      UsuarioActualizar.password
+    );
+
+    const UsuarioActualizarConToken = {
+      name: UsuarioActualizar.name,
+      user: UsuarioActualizar.user,
+      token,
+    };
 
     return res
       .status(200)
       .json(
-        Respuesta(200, "OK", "Encontrado correctamente", [UsuarioActualizar])
+        Respuesta(200, "OK", "Encontrado correctamente", [
+          UsuarioActualizarConToken,
+        ])
       );
   } catch (error) {
     console.log(error);
