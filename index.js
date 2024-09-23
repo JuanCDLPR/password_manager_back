@@ -11,6 +11,7 @@ const { dbConnection } = require("./connection/config-mongo");
 const { usuarios } = require("./routes/usuarios.routes");
 const { plataformas } = require("./routes/plataformas.routes");
 const { perfil } = require("./routes/perfil.routes");
+const { grupos } = require("./routes/grupos.routes");
 
 //inicio de variables de entorno
 config();
@@ -36,6 +37,7 @@ app.use(express.static("public"));
 app.use("/usuarios", usuarios);
 app.use("/plataformas", plataformas);
 app.use("/perfil", perfil);
+app.use("/grupos", grupos);
 
 app.listen(app.get("port"), () => {
   console.log("PORT ", app.get("port"));
