@@ -10,9 +10,10 @@ const dbConnection = async () => {
     });
 
     console.log(
-      `DB Online: ${process.env.MONGODB_DB_NAME} (${process.env.NODE_ENV})`
+      `DB Online: ${process.env.MONGODB_DB_NAME} (${process.env.NODE_ENV})`,
     );
   } catch (error) {
+    console.log(error);
     console.error("No fue posible conectar con MongoDB");
     throw new Error("Error al inicializar la base de datos");
   }
