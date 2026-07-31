@@ -1,26 +1,24 @@
 const jwt = require("jsonwebtoken");
 
-const generarJWT = (id, user, pass) => {
-  const payload = { id, user, pass };
+const TOKEN_OPTIONS = {
+  audience: "password-manager-web",
+  issuer: "password-manager-api",
+};
 
+const generarJWT = (id, tokenVersion = 0) => {
   return new Promise((resolve, reject) => {
     jwt.sign(
-      payload,
+      { ver: tokenVersion },
       process.env.SEED_TOKEN,
       {
-        //expiresIn: "10 days",
-        //expiresIn: "24h",
-        expiresIn: "6h",
-        //expiresIn: "1m",
-        //expiresIn: "600s",
+        ...TOKEN_OPTIONS,
+        expiresIn: process.env.JWT_EXPIRES_IN || "6h",
+        subject: id.toString(),
       },
       (err, token) => {
         if (err) {
-          // TODO MAL
-          console.log(err);
           reject(err);
         } else {
-          // TODO BIEN
           resolve(token);
         }
       }
@@ -30,4 +28,5 @@ const generarJWT = (id, user, pass) => {
 
 module.exports = {
   generarJWT,
+  TOKEN_OPTIONS,
 };

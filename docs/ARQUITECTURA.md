@@ -2,117 +2,77 @@
 
 ## Vista general
 
-El producto está dividido en dos repositorios:
-
-| Capa | Repositorio | Responsabilidad |
-| --- | --- | --- |
-| Frontend | `password_manager` | SPA React, navegación, formularios y consumo de la API |
-| Backend | `password_manager_back` | API Express, autenticación y persistencia MongoDB |
-
 ```mermaid
 flowchart LR
     U[Usuario] --> F[React SPA]
-    F -->|JSON + encabezado Administracion| A[Express API]
-    A --> M[Middleware JWT]
-    M --> C[Controladores]
+    F -->|JSON + Administracion| A[Express API]
+    A --> H[Helmet / CORS / límites]
+    H --> J[Middleware JWT]
+    J --> C[Controladores]
     C --> DB[(MongoDB)]
-    F --> LS[(localStorage: JWT y nombre)]
 ```
+
+| Capa | Repositorio | Responsabilidad |
+| --- | --- | --- |
+| Frontend | `password_manager` | SPA React, formularios y consumo de la API |
+| Backend | `password_manager_back` | Autenticación, autorización y persistencia |
 
 ## Backend
 
-`index.js` carga variables de entorno, abre la conexión con MongoDB, registra
-middlewares globales y monta tres routers:
+- `config/env.js`: valida `BD_CNN`, `SEED_TOKEN` y el puerto; obtiene orígenes
+  permitidos.
+- `connection/config-mongo.js`: abre exclusivamente la conexión indicada por
+  `BD_CNN`.
+- `middlewares/validar-jws.js`: verifica firma, audiencia, emisor, expiración y
+  versión de sesión.
+- `middlewares/rate-limit.js`: limita registro, login y renovación.
+- `controllers/`: valida entradas y aplica autorización a nivel de documento.
+- `models/`: define usuario y plataforma. Los campos sensibles están ocultos.
 
-- `/usuarios`: registro, autenticación y renovación de token.
-- `/plataformas`: alta, lista, consulta, edición y eliminación.
-- `/perfil`: consulta, edición y cambio de contraseña.
+El servidor espera la conexión MongoDB antes de escuchar y cierra servidor y
+conexión ordenadamente ante `SIGINT` o `SIGTERM`.
 
-Las responsabilidades se distribuyen de la siguiente manera:
+## Modelos
 
-- `routes/`: vincula método y URL con cada controlador.
-- `middlewares/validar-jws.js`: verifica el JWT y vuelve a consultar al usuario.
-- `controllers/`: contiene lógica HTTP y consultas Mongoose.
-- `models/`: define los documentos y el sobre común de respuesta.
-- `helpers/`: genera tokens y cifra/descifra con AES.
-- `connection/`: inicializa MongoDB. `config-db.js` y
-  `usuarios.controller.js` pertenecen a una implementación MySQL anterior que
-  ya no usan las rutas activas.
+### Usuario
 
-### Modelos actuales
+| Campo | Detalle |
+| --- | --- |
+| `name` | 2 a 100 caracteres |
+| `user` | Normalizado a minúsculas, índice único |
+| `password` | Hash bcrypt, costo 12, `select: false` |
+| `tokenVersion` | Invalida JWT anteriores, `select: false` |
+| `img` | URL opcional, máximo 2048 caracteres |
+| `fecha`, `actualizado` | Fechas de auditoría básica |
 
-**Usuario (`USUARIOS`)**
+### Plataforma
 
-| Campo | Tipo | Detalle |
-| --- | --- | --- |
-| `name` | String | Obligatorio |
-| `user` | String | Obligatorio; la unicidad se valida solo en el controlador |
-| `password` | String | Obligatorio; actualmente cifrado de forma reversible |
-| `img` | String | URL opcional |
-| `fecha` | Date | Creación |
-| `actualizado` | Date | Última actualización |
+| Campo | Detalle |
+| --- | --- |
+| `id_usuario` | ObjectId obligatorio e indexado |
+| `name` | 1 a 100 caracteres |
+| `url` | HTTP/HTTPS opcional |
+| `fecha`, `actualizado` | Fechas |
 
-**Plataforma (`PLATAFORMAS`)**
+Cada consulta, actualización y eliminación usa simultáneamente `_id` e
+`id_usuario`; conocer el identificador de otro usuario no concede acceso.
 
-| Campo | Tipo | Detalle |
-| --- | --- | --- |
-| `id_usuario` | String | Propietario |
-| `name` | String | Obligatorio |
-| `url` | String | Opcional |
-| `fecha` | Date | Creación |
-| `actualizado` | Date | Última actualización |
+## Sesión
 
-No existen todavía modelos de grupo ni de credencial/acceso.
+1. Registro guarda un hash bcrypt; nunca guarda una contraseña recuperable.
+2. Login compara con `bcrypt.compare`.
+3. El JWT incluye `sub` y `ver`, con emisor y audiencia fijos.
+4. El middleware vuelve a consultar la versión de sesión del usuario.
+5. Cambiar contraseña incrementa `tokenVersion` e invalida todos los JWT
+   anteriores.
+6. Renovar sesión usa `POST` con contraseña en JSON, nunca en la URL.
 
 ## Frontend
 
-La aplicación fue creada con Create React App y usa React Router, Material UI,
-React Bootstrap, SweetAlert2 y `fetch`.
+`REACT_APP_API_URL` define la API. El cliente HTTP está centralizado, acepta
+respuestas 2xx, envía solo `Content-Type` y `Administracion`, y conserva los
+mensajes JSON del backend. Al salir elimina únicamente `JWT`, `nombre` y `user`.
 
-Áreas disponibles:
-
-- `login` y `register`: acceso público.
-- `plataformas`: lista, búsqueda, ordenamiento, alta, edición y eliminación.
-- `perfil`: edición del nombre, usuario e imagen, y cambio de contraseña.
-- `grupos`: interfaz creada, pero sin endpoints correspondientes en el backend.
-- `includes`: menú, contador/renovación de sesión y componentes reutilizables.
-- `context/backend.js`: URL base y tres wrappers de peticiones.
-- `context/storaje.js`: JWT y nombre del usuario en `localStorage`.
-
-El dashboard contiene texto provisional (`asdasd`) y la opción “Accesos” apunta
-a una ruta no implementada.
-
-## Flujos principales
-
-### Inicio de sesión
-
-1. React envía `user` y `password` a `POST /usuarios/auth`.
-2. La API busca al usuario y descifra la contraseña guardada para compararla.
-3. La API emite un JWT de 6 horas.
-4. El frontend guarda el JWT y el nombre en `localStorage`.
-5. Las siguientes peticiones envían el token en `Administracion`.
-
-### Operación privada
-
-1. `validarJWT` verifica firma y expiración.
-2. Extrae `id`, `user` y `pass` del token.
-3. Consulta nuevamente el usuario y compara esos datos con MongoDB.
-4. Expone `req.uid` al controlador.
-
-### Plataformas
-
-La lista sí filtra por `id_usuario`. Las operaciones por identificador
-(`consultar`, `actualizar` y `eliminar`) buscan únicamente por `_id`; actualmente
-no comprueban que el documento pertenezca a `req.uid`.
-
-## Configuración e integración
-
-El backend utiliza `PORT` o `3000` por defecto. El frontend tiene
-`http://localhost:3024/` escrito directamente en
-`src/context/backend.js`. Para el estado actual, debe iniciarse el backend con
-`PORT=3024`.
-
-En producción también se debe configurar el servidor de la SPA para devolver
-`index.html` en rutas de React Router. El `server.js` actual responde 404 cuando
-una ruta como `/perfil` no corresponde a un archivo físico.
+El JWT aún se guarda en `localStorage`; migrarlo a una cookie `HttpOnly` requiere
+rediseñar conjuntamente autenticación, CORS y protección CSRF.
 

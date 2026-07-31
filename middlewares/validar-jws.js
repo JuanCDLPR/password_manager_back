@@ -1,5 +1,6 @@
-const { response, request } = require("express");
+const { request, response } = require("express");
 const jwt = require("jsonwebtoken");
+const { TOKEN_OPTIONS } = require("../helpers/jwt");
 const { Respuesta } = require("../models/repuesta");
 const UsuariosModel = require("../models/usuarios.model");
 
@@ -9,53 +10,26 @@ const validarJWT = async (req = request, res = response, next) => {
   if (!token) {
     return res
       .status(401)
-      .json(Respuesta(401, "error", "no se encontro el token", []));
+      .json(Respuesta(401, "error", "No se encontró el token", []));
   }
 
   try {
-    const { id, user, pass, iat, exp } = jwt.verify(
-      token,
-      process.env.SEED_TOKEN
-    );
+    const { sub, ver } = jwt.verify(token, process.env.SEED_TOKEN, TOKEN_OPTIONS);
+    const usuario = await UsuariosModel.findById(sub).select("+tokenVersion");
 
-    const DatosUsuario = await UsuariosModel.findById(id);
-
-    if (!DatosUsuario) {
+    if (!usuario || usuario.tokenVersion !== ver) {
       return res
         .status(401)
-        .json(
-          Respuesta(401, "OK", "No se encontro informacion del usuario", [])
-        );
+        .json(Respuesta(401, "error", "La sesión ya no es válida", []));
     }
 
-    if (
-      DatosUsuario._id.toString() !== id ||
-      DatosUsuario.user !== user ||
-      DatosUsuario.password !== pass
-    ) {
-      return res
-        .status(401)
-        .json(
-          Respuesta(
-            401,
-            "OK",
-            "La informacion del usuario esta comprometida",
-            []
-          )
-        );
-    }
-
-    //console.log(DatosUsuario);
-
-    req.uid = id;
-    req.user = user;
-    req.pass = pass;
-    req.creacion = iat;
-    req.expira = exp;
-  } catch (error) {
-    return res.status(401).json(Respuesta(401, "error", "token no válido", []));
+    req.uid = usuario.id;
+    next();
+  } catch {
+    return res
+      .status(401)
+      .json(Respuesta(401, "error", "Token no válido o expirado", []));
   }
-  next();
 };
 
 module.exports = { validarJWT };

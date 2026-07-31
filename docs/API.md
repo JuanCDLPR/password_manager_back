@@ -2,122 +2,85 @@
 
 ## Convenciones
 
-- URL local recomendada para integrarse con el frontend:
-  `http://localhost:3024`.
-- Cuerpo de las peticiones: JSON.
-- Autenticación privada: `Administracion: <token>`.
-- El código funcional se incluye también dentro del JSON:
-
-```json
-{
-  "codigo": 200,
-  "estatus": "OK",
-  "mensaje": "Descripción del resultado",
-  "data": []
-}
-```
-
-Algunos errores funcionales actuales responden con HTTP `200` y un `codigo`
-distinto de `200`. El consumidor debe revisar ambos valores hasta que se
-normalice el contrato.
-
-## Usuarios
-
-### `POST /usuarios/registrar`
-
-Pública. Crea una cuenta.
-
-```json
-{
-  "name": "Usuario Demo",
-  "user": "demo",
-  "password": "secreto"
-}
-```
-
-Respuestas observadas:
-
-- HTTP 200 / código 200: usuario creado.
-- HTTP 400 / código 400: el usuario ya existe.
-- HTTP 500 / código 500: error de persistencia.
-
-### `POST /usuarios/auth`
-
-Pública. Autentica y entrega un JWT válido durante 6 horas.
-
-```json
-{
-  "user": "demo",
-  "password": "secreto"
-}
-```
-
-Respuesta exitosa:
+- URL local: `http://localhost:3024`.
+- JSON con límite de 10 KB.
+- Ruta privada: `Administracion: <token>`.
+- Respuesta:
 
 ```json
 {
   "codigo": 200,
   "estatus": "ok",
-  "mensaje": "insertado correctamente",
-  "data": {
-    "name": "Usuario Demo",
-    "user": "demo",
-    "token": "<jwt>"
-  }
+  "mensaje": "Descripción",
+  "data": []
 }
 ```
 
-Las credenciales incorrectas se informan actualmente con HTTP 200 y código 403.
+Los códigos HTTP y `codigo` son consistentes: 201 creación, 400 validación, 401
+sesión/credenciales, 403 CORS, 404 ausencia, 409 conflicto y 429 límite.
 
-### `GET /usuarios/refresh?pass_confirm=...`
+## Usuarios
 
-Privada. Solicita la contraseña actual y devuelve un token nuevo en `data[0]`.
-Actualmente la contraseña viaja como query string; esto debe cambiarse a un
-`POST` con cuerpo JSON para evitar su aparición en historiales y logs.
+### `POST /usuarios/registrar`
 
-## Plataformas
-
-Todas las rutas requieren autenticación.
-
-| Método y ruta | Entrada | Resultado |
-| --- | --- | --- |
-| `POST /plataformas/insertar` | Body: `nombre`, `url?` | Crea una plataforma para `req.uid` |
-| `GET /plataformas/listar` | Query: `query`, `Order` | Lista las plataformas del usuario |
-| `GET /plataformas/consultar` | Query: `ID` | Devuelve la plataforma en `data[0]` |
-| `POST /plataformas/actualizar` | Body: `id`, `nombre`, `url?` | Actualiza una plataforma |
-| `POST /plataformas/eliminar` | Query: `ID` | Elimina una plataforma |
-
-Valores de `Order`:
-
-| Valor | Orden |
-| --- | --- |
-| `1` | Más recientes |
-| `2` | Más antiguas |
-| `3` | Nombre descendente |
-| `4` | Nombre ascendente |
-
-Ejemplo de creación:
+Pública y limitada a 5 intentos por 15 minutos.
 
 ```json
 {
-  "nombre": "GitHub",
-  "url": "https://github.com"
+  "name": "Usuario Demo",
+  "user": "usuario.demo",
+  "password": "ClaveSegura!1"
 }
 ```
 
-> [!WARNING]
-> Consultar, actualizar y eliminar no validan actualmente la propiedad del
-> registro. Un usuario autenticado que conozca otro `_id` podría operar sobre
-> un documento ajeno.
+Nombre: 2–100 caracteres. Usuario: 3–50, letras, números, punto, guion o guion
+bajo. Contraseña: 12–128 caracteres. Respuesta exitosa: HTTP 201.
+
+### `POST /usuarios/auth`
+
+Pública y limitada a 10 intentos por 15 minutos.
+
+```json
+{
+  "user": "usuario.demo",
+  "password": "ClaveSegura!1"
+}
+```
+
+Entrega `name`, `user` y `token`. Credenciales incorrectas: HTTP 401.
+
+### `POST /usuarios/refresh`
+
+Privada y limitada a 10 intentos por 15 minutos.
+
+```json
+{
+  "password": "ClaveSegura!1"
+}
+```
+
+Entrega el JWT nuevo en `data[0]`. La contraseña no aparece en query strings.
+
+## Plataformas
+
+Todas requieren autenticación y operan únicamente sobre datos del propietario.
+
+| Método y ruta | Entrada |
+| --- | --- |
+| `POST /plataformas/insertar` | Body: `nombre`, `url?` |
+| `GET /plataformas/listar` | Query: `query`, `Order` |
+| `GET /plataformas/consultar` | Query: `ID` |
+| `POST /plataformas/actualizar` | Body: `id`, `nombre`, `url?` |
+| `POST /plataformas/eliminar` | Query: `ID` |
+
+`url`, si existe, debe ser HTTP o HTTPS. `Order`: 1 recientes, 2 antiguas, 3
+nombre descendente y 4 nombre ascendente.
 
 ## Perfil
 
-Todas las rutas requieren autenticación.
-
 ### `GET /perfil/consultar`
 
-Devuelve el documento del usuario en `data[0]`. En el estado actual también
-serializa el campo `password`; debe excluirse antes de exponer la API.
+Devuelve únicamente `name`, `user`, `img`, `fecha` y `actualizado`.
 
 ### `POST /perfil/actualizar`
 
@@ -125,28 +88,26 @@ serializa el campo `password`; debe excluirse antes de exponer la API.
 {
   "nombre": "Nuevo nombre",
   "usuario": "nuevo_usuario",
-  "url": "https://ejemplo.com/avatar.png"
+  "url": "https://example.com/avatar.png"
 }
 ```
 
-Devuelve nombre, usuario y un JWT actualizado en `data[0]`.
+Devuelve datos públicos y un JWT vigente en `data[0]`.
 
 ### `POST /perfil/update_pass`
 
 ```json
 {
-  "old_pass": "secreto-anterior",
-  "pass": "secreto-nuevo",
-  "rep_pass": "secreto-nuevo"
+  "old_pass": "ClaveAnterior!1",
+  "pass": "ClaveNuevaSegura!1",
+  "rep_pass": "ClaveNuevaSegura!1"
 }
 ```
 
-Devuelve el nuevo JWT en `data[0]`. El backend recibe `rep_pass`, pero
-actualmente no comprueba que coincida con `pass`; esa comparación solo existe
-en el frontend.
+El backend comprueba longitud, coincidencia y contraseña anterior. Al completar,
+invalida todos los tokens anteriores y devuelve uno nuevo en `data[0]`.
 
-## Rutas aún no disponibles
+## Pendientes
 
-El frontend intenta consumir CRUD bajo `/grupos`, pero el backend no registra
-ese router. Tampoco existen endpoints para accesos o credenciales.
+No existen todavía rutas de grupos, accesos o credenciales.
 

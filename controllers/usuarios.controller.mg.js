@@ -1,134 +1,121 @@
-const { response, request } = require("express");
-const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const { request, response } = require("express");
+const { generarJWT } = require("../helpers/jwt");
+const {
+  cleanString,
+  isValidName,
+  isValidPassword,
+  isValidUser,
+  normalizeUser,
+} = require("../helpers/validation");
 const { Respuesta } = require("../models/repuesta");
 const UsuariosModel = require("../models/usuarios.model");
-const { Encrypt, Decrypt } = require("../helpers/encrypt-by-key");
-const { generarJWT } = require("../helpers/jwt");
 
 const registrar = async (req = request, res = response) => {
-  const { name, user, password } = req.body;
+  const name = cleanString(req.body.name);
+  const user = normalizeUser(req.body.user);
+  const { password } = req.body;
 
-  const query = { user: user };
+  if (!isValidName(name) || !isValidUser(user) || !isValidPassword(password)) {
+    return res.status(400).json(
+      Respuesta(
+        400,
+        "error",
+        "Nombre, usuario o contraseña no cumplen el formato requerido",
+        []
+      )
+    );
+  }
 
   try {
-    const FindUserRegister = await UsuariosModel.findOne(query);
+    const passwordHash = await bcrypt.hash(password, 12);
+    await UsuariosModel.create({ name, user, password: passwordHash });
 
-    if (FindUserRegister) {
-      //console.log(FindUserRegister);
+    return res
+      .status(201)
+      .json(Respuesta(201, "ok", "Usuario registrado correctamente", []));
+  } catch (error) {
+    if (error?.code === 11000) {
       return res
-        .status(400)
-        .json(Respuesta(400, "error", "este usuario ya existe", []));
+        .status(409)
+        .json(Respuesta(409, "error", "Este usuario ya existe", []));
     }
 
-    const NewUser = new UsuariosModel({
-      name,
-      user,
-      password,
-    });
-
-    NewUser.password = Encrypt(password);
-
-    //console.log(NewUser.id);
-
-    await NewUser.save();
-
-    return res
-      .status(200)
-      .json(Respuesta(200, "ok", "Usuario registrado correctamene", []));
-  } catch (error) {
     return res
       .status(500)
-      .json(Respuesta(500, "error", "error al registrar usuario", []));
+      .json(Respuesta(500, "error", "No fue posible registrar al usuario", []));
   }
 };
 
 const autentificarte = async (req = request, res = response) => {
-  const { user, password } = req.body;
+  const user = normalizeUser(req.body.user);
+  const { password } = req.body;
 
-  const UserRegister = await UsuariosModel.findOne({ user });
-
-  if (!UserRegister) {
+  if (!isValidUser(user) || typeof password !== "string") {
     return res
-      .status(200)
-      .json(
-        Respuesta(
-          403,
-          "error",
-          "credenciales incorrectas, verifique nuevamente",
-          []
-        )
-      );
+      .status(400)
+      .json(Respuesta(400, "error", "Credenciales inválidas", []));
   }
 
-  if (password === Decrypt(UserRegister.password)) {
-    const token = await generarJWT(
-      UserRegister.id,
-      UserRegister.user,
-      UserRegister.password
+  try {
+    const usuario = await UsuariosModel.findOne({ user }).select(
+      "+password +tokenVersion"
     );
+    const passwordValido =
+      usuario && (await bcrypt.compare(password, usuario.password));
 
-    const body = {
-      name: UserRegister.name,
-      user: UserRegister.user,
-      token,
-    };
+    if (!passwordValido) {
+      return res
+        .status(401)
+        .json(Respuesta(401, "error", "Credenciales incorrectas", []));
+    }
 
+    const token = await generarJWT(usuario.id, usuario.tokenVersion);
+
+    return res.status(200).json(
+      Respuesta(200, "ok", "Autenticación correcta", {
+        name: usuario.name,
+        user: usuario.user,
+        token,
+      })
+    );
+  } catch {
     return res
-      .status(200)
-      .json(Respuesta(200, "ok", "insertado correctamente", body));
-  } else {
-    return res
-      .status(200)
-      .json(
-        Respuesta(
-          403,
-          "error",
-          "credenciales incorrectas, verifique nuevamente",
-          []
-        )
-      );
+      .status(500)
+      .json(Respuesta(500, "error", "No fue posible iniciar sesión", []));
   }
 };
 
 const refrescar_token = async (req = request, res = response) => {
+  const { uid } = req;
+  const { password } = req.body;
+
+  if (typeof password !== "string") {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "La contraseña es obligatoria", []));
+  }
+
   try {
-    const { uid, user, pass } = req;
-    const { pass_confirm } = req.query;
+    const usuario = await UsuariosModel.findById(uid).select(
+      "+password +tokenVersion"
+    );
 
-    console.log(req.query);
-
-    const DatosUsuario = await UsuariosModel.findById(uid);
-
-    if (!DatosUsuario) {
+    if (!usuario || !(await bcrypt.compare(password, usuario.password))) {
       return res
-        .status(200)
-        .json(
-          Respuesta(901, "OK", "No se encontro informacio del usuario", [])
-        );
+        .status(401)
+        .json(Respuesta(401, "error", "La contraseña no es correcta", []));
     }
 
-    if (
-      Decrypt(DatosUsuario.password) !== pass &&
-      Decrypt(DatosUsuario.password) !== pass_confirm
-    ) {
-      return res
-        .status(200)
-        .json(Respuesta(902, "OK", "La contraseña no es correcta", []));
-    }
-
-    const token = await generarJWT(uid, user, pass);
-
+    const token = await generarJWT(usuario.id, usuario.tokenVersion);
     return res
       .status(200)
-      .json(Respuesta(200, "ok", "Refrescado correctamene", [token]));
-  } catch (error) {
+      .json(Respuesta(200, "ok", "Sesión renovada correctamente", [token]));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "error", "error al registrar usuario", []));
+      .json(Respuesta(500, "error", "No fue posible renovar la sesión", []));
   }
 };
-module.exports = {
-  registrar,
-  autentificarte,
-  refrescar_token,
-};
+
+module.exports = { autentificarte, refrescar_token, registrar };

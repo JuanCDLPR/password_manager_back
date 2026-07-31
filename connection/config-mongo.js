@@ -2,17 +2,14 @@ const mongoose = require("mongoose");
 
 const dbConnection = async () => {
   try {
-    /*await mongoose.connect(process.env.BD_CNN, {
-      //useNewUrlParser: true,
-      //useUnifiedTopology: true,
-    });*/
-
-    await mongoose.connect(process.env.BD_CNN);
+    await mongoose.connect(process.env.BD_CNN, {
+      serverSelectionTimeoutMS: 10000,
+    });
 
     console.log("DB Online");
   } catch (error) {
-    console.log(error);
-    throw new Error("Error a la hora de inicializad DB");
+    console.error("No fue posible conectar con MongoDB");
+    throw new Error("Error al inicializar la base de datos");
   }
 };
 

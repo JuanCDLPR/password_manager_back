@@ -1,134 +1,140 @@
-const { response, request } = require("express");
-const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const { request, response } = require("express");
+const { generarJWT } = require("../helpers/jwt");
+const {
+  cleanString,
+  isValidName,
+  isValidOptionalHttpUrl,
+  isValidPassword,
+  isValidUser,
+  normalizeUser,
+} = require("../helpers/validation");
 const { Respuesta } = require("../models/repuesta");
 const UsuariosModel = require("../models/usuarios.model");
-const { Encrypt, Decrypt } = require("../helpers/encrypt-by-key");
-const { generarJWT } = require("../helpers/jwt");
 
 const consultar = async (req = request, res = response) => {
   try {
-    const { uid } = req;
+    const usuario = await UsuariosModel.findById(req.uid).select(
+      "name user img fecha actualizado"
+    );
 
-    const DatosUsuario = await UsuariosModel.findById(uid);
-
-    if (!DatosUsuario) {
+    if (!usuario) {
       return res
-        .status(200)
-        .json(
-          Respuesta(900, "OK", "No se encontro informacio del usuario", [])
-        );
+        .status(404)
+        .json(Respuesta(404, "error", "No se encontró el usuario", []));
     }
 
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "Encontrado correctamente", [DatosUsuario]));
-  } catch (error) {
-    console.log(error);
+      .json(Respuesta(200, "ok", "Perfil encontrado", [usuario]));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al consultar", []));
+      .json(Respuesta(500, "error", "No fue posible consultar el perfil", []));
   }
 };
 
 const actualizar = async (req = request, res = response) => {
-  try {
-    const { uid } = req;
-    const { nombre, usuario, url } = req.body;
+  const name = cleanString(req.body.nombre);
+  const user = normalizeUser(req.body.usuario);
+  const img = cleanString(req.body.url);
 
-    const DatosUsuario = await UsuariosModel.findOne({
-      user: usuario,
-      _id: { $ne: uid },
+  if (
+    !isValidName(name) ||
+    !isValidUser(user) ||
+    !isValidOptionalHttpUrl(img)
+  ) {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "Los datos del perfil no son válidos", []));
+  }
+
+  try {
+    const usuarioExistente = await UsuariosModel.exists({
+      user,
+      _id: { $ne: req.uid },
     });
 
-    if (DatosUsuario) {
+    if (usuarioExistente) {
       return res
-        .status(200)
-        .json(Respuesta(900, "ERROR", "Ya esxiste este usuario", []));
+        .status(409)
+        .json(Respuesta(409, "error", "Este usuario ya existe", []));
     }
 
-    const UsuarioActualizar = await UsuariosModel.findByIdAndUpdate(
-      uid,
-      { name: nombre, user: usuario, img: url, actualizado: Date.now() },
-      { new: true }
+    const usuario = await UsuariosModel.findByIdAndUpdate(
+      req.uid,
+      { name, user, img, actualizado: new Date() },
+      { new: true, runValidators: true }
+    ).select("+tokenVersion");
+
+    if (!usuario) {
+      return res
+        .status(404)
+        .json(Respuesta(404, "error", "No se encontró el usuario", []));
+    }
+
+    const token = await generarJWT(usuario.id, usuario.tokenVersion);
+    return res.status(200).json(
+      Respuesta(200, "ok", "Perfil actualizado", [
+        { name: usuario.name, user: usuario.user, token },
+      ])
     );
-
-    const token = await generarJWT(
-      UsuarioActualizar.id,
-      UsuarioActualizar.user,
-      UsuarioActualizar.password
-    );
-
-    const UsuarioActualizarConToken = {
-      name: UsuarioActualizar.name,
-      user: UsuarioActualizar.user,
-      token,
-    };
-
-    return res
-      .status(200)
-      .json(
-        Respuesta(200, "OK", "Encontrado correctamente", [
-          UsuarioActualizarConToken,
-        ])
-      );
   } catch (error) {
-    console.log(error);
+    if (error?.code === 11000) {
+      return res
+        .status(409)
+        .json(Respuesta(409, "error", "Este usuario ya existe", []));
+    }
+
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al consultar", []));
+      .json(Respuesta(500, "error", "No fue posible actualizar el perfil", []));
   }
 };
 
 const update_pass = async (req = request, res = response) => {
+  const { old_pass: oldPassword, pass: password, rep_pass: repeat } = req.body;
+
+  if (!isValidPassword(password) || password !== repeat) {
+    return res.status(400).json(
+      Respuesta(
+        400,
+        "error",
+        "La nueva contraseña debe tener entre 12 y 128 caracteres y coincidir",
+        []
+      )
+    );
+  }
+
   try {
-    const { uid } = req;
-    const { pass, rep_pass, old_pass } = req.body;
-
-    //console.log("body", req.body);
-
-    const DatosUsuario = await UsuariosModel.findById(uid);
-
-    if (!DatosUsuario) {
-      return res
-        .status(200)
-        .json(
-          Respuesta(900, "OK", "No se encontro informacio del usuario", [])
-        );
-    }
-
-    let UsuarioActualizar;
-
-    if (Decrypt(DatosUsuario.password) === old_pass) {
-      UsuarioActualizar = await UsuariosModel.findByIdAndUpdate(
-        uid,
-        { password: Encrypt(pass), actualizado: Date.now() },
-        { new: true }
-      );
-    } else {
-      return res
-        .status(200)
-        .json(Respuesta(900, "OK", "La informacion no es corecta", []));
-    }
-
-    const token = await generarJWT(
-      UsuarioActualizar.id,
-      UsuarioActualizar.user,
-      UsuarioActualizar.password
+    const usuario = await UsuariosModel.findById(req.uid).select(
+      "+password +tokenVersion"
     );
 
+    if (
+      !usuario ||
+      typeof oldPassword !== "string" ||
+      !(await bcrypt.compare(oldPassword, usuario.password))
+    ) {
+      return res
+        .status(401)
+        .json(Respuesta(401, "error", "La contraseña actual no es correcta", []));
+    }
+
+    usuario.password = await bcrypt.hash(password, 12);
+    usuario.tokenVersion += 1;
+    usuario.actualizado = new Date();
+    await usuario.save();
+
+    const token = await generarJWT(usuario.id, usuario.tokenVersion);
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "Actualizado correctamente", [token]));
-  } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .json(Respuesta(500, "ERROR", "Error al actualizar", []));
+      .json(Respuesta(200, "ok", "Contraseña actualizada", [token]));
+  } catch {
+    return res.status(500).json(
+      Respuesta(500, "error", "No fue posible actualizar la contraseña", [])
+    );
   }
 };
 
-module.exports = {
-  consultar,
-  actualizar,
-  update_pass,
-};
+module.exports = { actualizar, consultar, update_pass };

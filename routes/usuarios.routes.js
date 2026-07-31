@@ -1,10 +1,10 @@
 const { Router } = require("express");
 const { validarJWT } = require("../middlewares/validar-jws");
-
-/* const {
-  registrar,
-  autentificarte,
-} = require("../controllers/usuarios.controller"); */
+const {
+  authLimiter,
+  refreshLimiter,
+  registerLimiter,
+} = require("../middlewares/rate-limit");
 
 const {
   registrar,
@@ -14,8 +14,8 @@ const {
 
 const router = Router();
 
-router.post("/registrar", registrar);
-router.post("/auth", autentificarte);
-router.get("/refresh", [validarJWT], refrescar_token);
+router.post("/registrar", registerLimiter, registrar);
+router.post("/auth", authLimiter, autentificarte);
+router.post("/refresh", refreshLimiter, validarJWT, refrescar_token);
 
 module.exports = { usuarios: router };

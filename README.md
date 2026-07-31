@@ -1,42 +1,39 @@
 # Password Manager API
 
-API REST del proyecto **Password Manager**, construida con Node.js, Express y
-MongoDB. Actualmente proporciona autenticación, administración del perfil del
-usuario y un catálogo personal de plataformas.
+API REST del proyecto **Password Manager**, construida con Node.js, Express,
+MongoDB y Mongoose. Proporciona autenticación, perfil y un catálogo personal de
+plataformas.
 
 > [!IMPORTANT]
-> El estado actual todavía no constituye un gestor de contraseñas completo:
-> no existe un modelo de accesos/credenciales y las plataformas solo almacenan
-> nombre y URL. Revisa el [estado y plan de mejoras](docs/ESTADO-Y-MEJORAS.md)
-> antes de usar el proyecto en producción.
+> El proyecto todavía no es un gestor de contraseñas completo: no existe un
+> modelo de accesos/credenciales y las plataformas solo almacenan nombre y URL.
+> La autenticación y los datos actuales fueron endurecidos, pero la futura
+> bóveda necesita un diseño criptográfico específico antes de guardar secretos.
 
-## Funcionalidades actuales
+## Funcionalidades
 
-- Registro e inicio de sesión.
-- Sesiones JWT con duración de 6 horas y renovación manual.
-- Consulta y edición del perfil.
-- Cambio de contraseña del usuario.
-- CRUD de plataformas, con búsqueda y ordenamiento.
-- Separación de los registros por usuario al listar plataformas.
-- Respuestas JSON con una estructura común.
+- Registro con contraseña hasheada mediante bcrypt, costo 12.
+- Inicio de sesión y renovación de JWT.
+- Invalidación de sesiones anteriores al cambiar la contraseña.
+- Consulta y edición segura del perfil.
+- CRUD de plataformas aislado por propietario.
+- Búsqueda y ordenamiento.
+- Validación de entradas, rate limiting, Helmet, CORS configurable y límite de
+  10 KB por solicitud.
+- Respuestas sin hash de contraseña ni versión de sesión.
 
 ## Tecnologías
 
-- Node.js 18
+- Node.js 18+
 - Express 4
 - MongoDB y Mongoose 8
+- bcryptjs
 - JSON Web Token
-- CryptoJS
-- CORS y dotenv
+- Helmet, CORS y express-rate-limit
+- dotenv
 
-El repositorio conserva una implementación antigua para MySQL, pero las rutas
-activas utilizan MongoDB.
-
-## Requisitos
-
-- Node.js 18 o una versión LTS compatible.
-- npm.
-- Una instancia de MongoDB local o remota.
+El backend utiliza exclusivamente MongoDB. El código y la dependencia heredados
+de MySQL fueron eliminados.
 
 ## Instalación
 
@@ -46,89 +43,75 @@ cd password_manager_back
 npm install
 ```
 
-Copia `.example.env` como `.env` y reemplaza los valores de ejemplo:
+Copia `.example.env` como `.env`:
 
 ```dotenv
-BD_CNN=mongodb://127.0.0.1:27017/password_manager
-SECRET_KEY=una_clave_larga_y_aleatoria_para_cifrado
-SEED_TOKEN=otra_clave_larga_y_aleatoria_para_jwt
+NODE_ENV=development
 PORT=3024
+BD_CNN=mongodb://127.0.0.1:27017/PasswordManager
+SEED_TOKEN=un_secreto_aleatorio_de_32_caracteres_o_mas
+JWT_EXPIRES_IN=6h
+CORS_ORIGINS=http://localhost:3021
+TRUST_PROXY=false
 ```
 
-`PORT=3024` hace coincidir la API con la URL que usa actualmente el frontend.
-Si no se define, el servidor utiliza el puerto `3000`.
-
-Inicia el servidor:
+`BD_CNN` es la única fuente de la cadena de conexión. No se incluyen
+credenciales ni direcciones privadas en el código.
 
 ```bash
-node index.js
+npm start
 ```
 
-Para recarga automática puede usarse `npx nodemon index.js`. El script
-`npm run dev` requiere que `nodemon` esté disponible, pero actualmente no está
-declarado entre las dependencias del proyecto.
+La API estará disponible en `http://localhost:3024`.
 
-La API quedará disponible en `http://localhost:3024`.
+## Scripts
 
-## Uso de la API
+| Comando | Descripción |
+| --- | --- |
+| `npm start` | Inicia la API |
+| `npm run dev` | Inicia con recarga automática |
+| `npm run check` | Verifica la sintaxis del punto de entrada |
+| `npm test` | Ejecuta las pruebas de seguridad |
 
-Las rutas privadas esperan el JWT sin el prefijo `Bearer` en el encabezado
-personalizado:
+## Autenticación
+
+Las rutas privadas esperan el JWT sin prefijo en:
 
 ```http
 Administracion: <token>
 ```
 
-Ejemplo de autenticación:
-
-```bash
-curl -X POST http://localhost:3024/usuarios/auth \
-  -H "Content-Type: application/json" \
-  -d "{\"user\":\"demo\",\"password\":\"secreto\"}"
-```
-
-Todos los endpoints y sus contratos están descritos en la
-[referencia de la API](docs/API.md).
+El JWT contiene únicamente el identificador (`sub`), una versión de sesión
+(`ver`) y los claims estándar. Nunca contiene usuario ni contraseña.
 
 ## Estructura
 
 ```text
-connection/   Conexión activa a MongoDB y conexión MySQL heredada
-controllers/  Casos de uso y acceso a datos
-helpers/      JWT y cifrado simétrico
-middlewares/  Validación de sesión
+config/       Validación y lectura segura del entorno
+connection/   Conexión MongoDB
+controllers/  Casos de uso y consultas Mongoose
+helpers/      JWT y validación reutilizable
+middlewares/  Sesión y límites de frecuencia
 models/       Esquemas Mongoose y formato de respuesta
-public/       Archivo estático de prueba
-routes/       Definición de endpoints
-docs/         Documentación técnica y evaluación del proyecto
-index.js      Composición e inicio del servidor
+routes/       Endpoints
+test/         Pruebas automatizadas de seguridad
+docs/         Arquitectura, API, seguridad y hoja de ruta
+index.js      Configuración e inicio ordenado del servidor
 ```
-
-## Scripts y pruebas
-
-| Comando | Estado |
-| --- | --- |
-| `node index.js` | Inicia la API |
-| `npm run dev` | Inicia con nodemon si está instalado |
-| `npm test` | No implementado; termina con error intencional |
-
-Todavía no hay pruebas automatizadas, linting, formateo ni integración
-continua.
 
 ## Documentación
 
-- [Índice de documentación](docs/README.md)
+- [Índice](docs/README.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Referencia de la API](docs/API.md)
-- [Estado actual, riesgos y mejoras](docs/ESTADO-Y-MEJORAS.md)
+- [Seguridad](docs/SEGURIDAD.md)
+- [Estado y mejoras pendientes](docs/ESTADO-Y-MEJORAS.md)
 
 ## Frontend
 
-El cliente React se encuentra en
-[JuanCDLPR/password_manager](https://github.com/JuanCDLPR/password_manager).
+[JuanCDLPR/password_manager](https://github.com/JuanCDLPR/password_manager)
 
 ## Autores
 
 - [MrLoop15](https://github.com/Mrloop15)
 - [JuanCDLPR](https://github.com/JuanCDLPR)
-

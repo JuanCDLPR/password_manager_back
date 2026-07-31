@@ -1,161 +1,167 @@
-const { response, request } = require("express");
+const { request, response } = require("express");
 const mongoose = require("mongoose");
-const { Respuesta } = require("../models/repuesta");
+const {
+  cleanString,
+  isValidOptionalHttpUrl,
+} = require("../helpers/validation");
 const PlataformasModel = require("../models/plataformas.model");
+const { Respuesta } = require("../models/repuesta");
+
+const validarDatos = (nombre, url) =>
+  nombre.length >= 1 &&
+  nombre.length <= 100 &&
+  isValidOptionalHttpUrl(url);
 
 const insertar = async (req = request, res = response) => {
-  try {
-    const { uid } = req;
-    const { nombre, url } = req.body;
+  const nombre = cleanString(req.body.nombre);
+  const url = cleanString(req.body.url);
 
-    const NewPlataforma = new PlataformasModel({
-      id_usuario: uid,
+  if (!validarDatos(nombre, url)) {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "Los datos de la plataforma no son válidos", []));
+  }
+
+  try {
+    await PlataformasModel.create({
+      id_usuario: req.uid,
       name: nombre,
-      url: url,
+      url,
     });
 
-    await NewPlataforma.save();
-
     return res
-      .status(200)
-      .json(Respuesta(200, "OK", "insertado correctamente", []));
-  } catch (error) {
-    console.log(error);
+      .status(201)
+      .json(Respuesta(201, "ok", "Plataforma creada correctamente", []));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al insertar", []));
+      .json(Respuesta(500, "error", "No fue posible crear la plataforma", []));
   }
 };
 
 const listar = async (req = request, res = response) => {
+  const order = Number(req.query.Order);
+  const search = cleanString(req.query.query).slice(0, 100);
+  const sortOptions = {
+    1: { fecha: -1 },
+    2: { fecha: 1 },
+    3: { name: -1 },
+    4: { name: 1 },
+  };
+
+  const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const filter = {
+    id_usuario: req.uid,
+    ...(search && { name: { $regex: escapedSearch, $options: "i" } }),
+  };
+
   try {
-    //console.log(req.query);
-    const { Order, query } = req.query;
-    const { uid } = req;
-
-    let ordenamiento = {};
-
-    switch (Number(Order)) {
-      case 1:
-        ordenamiento = { fecha: -1 };
-        break;
-      case 2:
-        ordenamiento = { fecha: 1 };
-        break;
-      case 3:
-        ordenamiento = { name: -1 };
-        break;
-      case 4:
-        ordenamiento = { name: 1 };
-        break;
-      default:
-        break;
-    }
-
-    const query_find =
-      query !== ""
-        ? { name: { $regex: query, $options: "i" }, id_usuario: uid }
-        : { id_usuario: uid };
-
-    const DataPlataformas = await PlataformasModel.find(query_find).sort(
-      ordenamiento
-    );
+    const plataformas = await PlataformasModel.find(filter)
+      .select("-id_usuario")
+      .sort(sortOptions[order] || { fecha: -1 });
 
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "obtenidos correctamente", DataPlataformas));
-  } catch (error) {
-    console.log(error);
+      .json(Respuesta(200, "ok", "Plataformas obtenidas", plataformas));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al consultar", []));
+      .json(Respuesta(500, "error", "No fue posible consultar las plataformas", []));
   }
 };
 
 const eliminar = async (req = request, res = response) => {
+  const { ID } = req.query;
+  if (!mongoose.isValidObjectId(ID)) {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "Identificador no válido", []));
+  }
+
   try {
-    const { ID } = req.query;
+    const plataforma = await PlataformasModel.findOneAndDelete({
+      _id: ID,
+      id_usuario: req.uid,
+    });
 
-    const RegistroAEliminar = await PlataformasModel.findById(ID);
-
-    if (!RegistroAEliminar) {
+    if (!plataforma) {
       return res
-        .status(200)
-        .json(
-          Respuesta(900, "OK", "No se encontro la plataforma a eliminar", [])
-        );
+        .status(404)
+        .json(Respuesta(404, "error", "No se encontró la plataforma", []));
     }
-
-    await PlataformasModel.findByIdAndDelete(RegistroAEliminar._id);
 
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "Eliminado correctamente", []));
-  } catch (error) {
-    console.log(error);
+      .json(Respuesta(200, "ok", "Plataforma eliminada", []));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al eliminar", []));
+      .json(Respuesta(500, "error", "No fue posible eliminar la plataforma", []));
   }
 };
 
 const consultar = async (req = request, res = response) => {
+  const { ID } = req.query;
+  if (!mongoose.isValidObjectId(ID)) {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "Identificador no válido", []));
+  }
+
   try {
-    const { ID } = req.query;
+    const plataforma = await PlataformasModel.findOne({
+      _id: ID,
+      id_usuario: req.uid,
+    }).select("-id_usuario");
 
-    const DatosPlataforma = await PlataformasModel.findById(ID);
-
-    if (!DatosPlataforma) {
+    if (!plataforma) {
       return res
-        .status(200)
-        .json(
-          Respuesta(900, "OK", "No se encontro informacio de la plataforma", [])
-        );
+        .status(404)
+        .json(Respuesta(404, "error", "No se encontró la plataforma", []));
     }
 
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "Eliminado correctamente", [DatosPlataforma]));
-  } catch (error) {
-    console.log(error);
+      .json(Respuesta(200, "ok", "Plataforma encontrada", [plataforma]));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al eliminar", []));
+      .json(Respuesta(500, "error", "No fue posible consultar la plataforma", []));
   }
 };
 
 const actualizar = async (req = request, res = response) => {
-  try {
-    const { id, nombre, url } = req.body;
+  const id = req.body.id;
+  const nombre = cleanString(req.body.nombre);
+  const url = cleanString(req.body.url);
 
-    const PlataformaActualizada = await PlataformasModel.findByIdAndUpdate(
-      id,
-      { name: nombre, url: url, actualizado: Date.now() },
-      { new: true }
+  if (!mongoose.isValidObjectId(id) || !validarDatos(nombre, url)) {
+    return res
+      .status(400)
+      .json(Respuesta(400, "error", "Los datos de la plataforma no son válidos", []));
+  }
+
+  try {
+    const plataforma = await PlataformasModel.findOneAndUpdate(
+      { _id: id, id_usuario: req.uid },
+      { name: nombre, url, actualizado: new Date() },
+      { new: true, runValidators: true }
     );
 
-    if (!PlataformaActualizada) {
+    if (!plataforma) {
       return res
-        .status(200)
-        .json(
-          Respuesta(
-            900,
-            "OK",
-            "No se encontro informacion de la plataforma",
-            []
-          )
-        );
+        .status(404)
+        .json(Respuesta(404, "error", "No se encontró la plataforma", []));
     }
 
     return res
       .status(200)
-      .json(Respuesta(200, "OK", "Actualizado correctamente", []));
-  } catch (error) {
-    console.log(error);
+      .json(Respuesta(200, "ok", "Plataforma actualizada", []));
+  } catch {
     return res
       .status(500)
-      .json(Respuesta(500, "ERROR", "Error al eliminar", []));
+      .json(Respuesta(500, "error", "No fue posible actualizar la plataforma", []));
   }
 };
 
-module.exports = { insertar, listar, eliminar, consultar, actualizar };
+module.exports = { actualizar, consultar, eliminar, insertar, listar };
