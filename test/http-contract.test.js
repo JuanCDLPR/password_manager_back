@@ -2,7 +2,10 @@ const assert = require("node:assert/strict");
 const { after, before, test } = require("node:test");
 
 process.env.BD_CNN ||= "mongodb://127.0.0.1:27017/password_manager_test";
+process.env.MONGODB_DB_NAME ||= "PasswordManagerTest";
+process.env.PRODUCTION_DB_NAME ||= "PasswordManager";
 process.env.SEED_TOKEN ||= "test_seed_with_more_than_32_characters";
+process.env.NODE_ENV = "test";
 process.env.HTTP_LOGS = "false";
 
 const { app } = require("../index");
@@ -43,6 +46,14 @@ test("devuelve errores tipados y un identificador de solicitud", async () => {
 
 test("responde 401 cuando falta autenticación", async () => {
   const response = await fetch(`${baseUrl}/plataformas`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("la ruta administrativa exige autenticación", async () => {
+  const response = await fetch(`${baseUrl}/admin`);
   const payload = await response.json();
 
   assert.equal(response.status, 401);

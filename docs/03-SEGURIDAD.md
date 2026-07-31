@@ -1,4 +1,4 @@
-# Seguridad
+# 03. Seguridad
 
 ## Controles implementados
 
@@ -19,6 +19,9 @@
 | Logging | No registra body, JWT ni Authorization; redacta query sensible |
 | Dependencias | `npm audit`: 0 vulnerabilidades tras actualización |
 | Base de datos | Cadena únicamente en `BD_CNN`, `.env` ignorado por Git |
+| Ambientes | Base explícita y bloqueo cruzado entre dev/test/producción |
+| Administración | Rol consultado en MongoDB y middleware `requireRole` |
+| Estado de cuenta | Las cuentas desactivadas no pueden usar sesiones |
 
 ## Verificación realizada
 
@@ -32,9 +35,9 @@ El 30 de julio de 2026 se ejecutó una prueba integral contra la base configurad
 - token anterior rechazado después del cambio de contraseña;
 - origen CORS no autorizado rechazado con 403.
 
-Los datos temporales se eliminaron al finalizar. La base `PasswordManager` quedó
-con **0 colecciones**. La eliminación completa no es recuperable desde la
-aplicación; solo un backup externo del proveedor podría restaurarla.
+Esa verificación fue histórica. A partir de la etapa de roles y correo no se
+eliminan usuarios ni datos existentes; las pruebas actuales no se conectan a la
+base persistente.
 
 ## Riesgos pendientes
 

@@ -12,8 +12,11 @@ plataformas.
 
 ## Funcionalidades
 
-- Registro con contraseña hasheada mediante bcrypt, costo 12.
-- Inicio de sesión y renovación de JWT.
+- Registro con correo y contraseña hasheada mediante bcrypt, costo 12.
+- Inicio de sesión por usuario o correo y renovación de JWT.
+- Roles `user`/`superadmin`, estado de cuenta y autorización administrativa.
+- Bases separadas y protegidas por ambiente.
+- Servicio opcional de correo con Mailgun.
 - Invalidación de sesiones anteriores al cambiar la contraseña.
 - Consulta y edición segura del perfil.
 - CRUD de plataformas aislado por propietario.
@@ -52,16 +55,25 @@ Copia `.example.env` como `.env`:
 ```dotenv
 NODE_ENV=development
 PORT=3024
-BD_CNN=mongodb://127.0.0.1:27017/PasswordManager
+BD_CNN=mongodb://127.0.0.1:27017/
+MONGODB_DB_NAME=PasswordManagerDev
+PRODUCTION_DB_NAME=PasswordManager
 SEED_TOKEN=un_secreto_aleatorio_de_32_caracteres_o_mas
 JWT_EXPIRES_IN=6h
 CORS_ORIGINS=http://localhost:3021
 TRUST_PROXY=false
 HTTP_LOGS=true
+MAIL_ENABLED=false
+MAILGUN_API_KEY=
+MAILGUN_DOMAIN=
+MAILGUN_BASE_URL=https://api.mailgun.net
+MAIL_FROM=Password Manager <postmaster@sandboxXXXXXXXX.mailgun.org>
+APP_PUBLIC_URL=http://localhost:3021
 ```
 
-`BD_CNN` es la única fuente de la cadena de conexión. No se incluyen
-credenciales ni direcciones privadas en el código.
+`BD_CNN` es la única fuente de la cadena de conexión y `MONGODB_DB_NAME`
+selecciona la base aislada del ambiente. No se incluyen credenciales ni
+direcciones privadas en el código.
 
 ```bash
 npm start
@@ -74,6 +86,8 @@ La API estará disponible en `http://localhost:3024`.
 | Comando | Descripción |
 | --- | --- |
 | `npm start` | Inicia la API |
+| `npm run bootstrap:admin` | Crea el primer superadministrador |
+| `npm run mail:test -- correo` | Envía una prueba con Mailgun |
 | `npm run dev` | Inicia con recarga automática |
 | `npm run check` | Verifica la sintaxis del punto de entrada |
 | `npm test` | Ejecuta las pruebas de seguridad |
@@ -134,10 +148,15 @@ index.js      Configuración e inicio ordenado del servidor
 ## Documentación
 
 - [Índice](docs/README.md)
-- [Arquitectura](docs/ARQUITECTURA.md)
-- [Referencia de la API](docs/API.md)
-- [Seguridad](docs/SEGURIDAD.md)
-- [Estado y mejoras pendientes](docs/ESTADO-Y-MEJORAS.md)
+- [01. Arquitectura](docs/01-ARQUITECTURA.md)
+- [02. Referencia de la API](docs/02-API.md)
+- [03. Seguridad](docs/03-SEGURIDAD.md)
+- [04. Estado y mejoras pendientes](docs/04-ESTADO-Y-MEJORAS.md)
+- [05. Ambientes y bases](docs/05-AMBIENTES.md)
+- [06. Roles y permisos](docs/06-ROLES-Y-PERMISOS.md)
+- [07. Bootstrap del administrador](docs/07-BOOTSTRAP-ADMIN.md)
+- [08. Mailgun](docs/08-MAILGUN.md)
+- [09. Templates HTML de correo](docs/09-PLANTILLAS-CORREO.md)
 
 ## Frontend
 

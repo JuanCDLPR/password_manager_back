@@ -1,4 +1,9 @@
 const HTTP_ERRORS = Object.freeze({
+  ACCOUNT_DISABLED: {
+    status: 403,
+    code: "ACCOUNT_DISABLED",
+    message: "La cuenta está desactivada",
+  },
   AUTH_REQUIRED: {
     status: 401,
     code: "AUTH_REQUIRED",
@@ -43,6 +48,11 @@ const HTTP_ERRORS = Object.freeze({
     status: 429,
     code: "RATE_LIMITED",
     message: "Demasiadas solicitudes; inténtalo más tarde",
+  },
+  ROLE_REQUIRED: {
+    status: 403,
+    code: "ROLE_REQUIRED",
+    message: "No tienes el rol necesario para realizar esta operación",
   },
   REQUEST_TOO_LARGE: {
     status: 413,

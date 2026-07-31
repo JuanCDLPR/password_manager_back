@@ -3,17 +3,26 @@ const test = require("node:test");
 const jwt = require("jsonwebtoken");
 const { generarJWT, TOKEN_OPTIONS } = require("../helpers/jwt");
 const {
+  isValidEmail,
   isValidOptionalHttpUrl,
   isValidPassword,
   isValidUser,
+  normalizeEmail,
   normalizeUser,
 } = require("../helpers/validation");
+const { requireRole } = require("../middlewares/require-role");
 const UsuariosModel = require("../models/usuarios.model");
 
 test("normaliza y valida nombres de usuario", () => {
   assert.equal(normalizeUser("  Usuario.Demo  "), "usuario.demo");
   assert.equal(isValidUser("usuario_demo-1"), true);
   assert.equal(isValidUser("usuario con espacios"), false);
+});
+
+test("normaliza y valida correos", () => {
+  assert.equal(normalizeEmail("  Persona@Example.COM "), "persona@example.com");
+  assert.equal(isValidEmail("persona@example.com"), true);
+  assert.equal(isValidEmail("correo-invalido"), false);
 });
 
 test("exige contraseñas de 12 a 128 caracteres", () => {
@@ -57,4 +66,28 @@ test("el modelo de usuario no serializa campos sensibles", () => {
 
   assert.equal(json.password, undefined);
   assert.equal(json.tokenVersion, undefined);
+  assert.equal(json.role, "user");
+  assert.equal(json.status, "active");
+});
+
+test("requireRole permite únicamente roles autorizados", () => {
+  let permitted = false;
+  requireRole("superadmin")(
+    { auth: { role: "superadmin" } },
+    {},
+    (error) => {
+      assert.equal(error, undefined);
+      permitted = true;
+    }
+  );
+  assert.equal(permitted, true);
+
+  requireRole("superadmin")(
+    { auth: { role: "user" } },
+    {},
+    (error) => {
+      assert.equal(error.code, "ROLE_REQUIRED");
+      assert.equal(error.status, 403);
+    }
+  );
 });

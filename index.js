@@ -6,7 +6,11 @@ const mongoose = require("mongoose");
 
 config();
 
-const { getAllowedOrigins, validateEnvironment } = require("./config/env");
+const {
+  getAllowedOrigins,
+  validateEnvironment,
+  validateMailEnvironment,
+} = require("./config/env");
 const { dbConnection } = require("./connection/config-mongo");
 const { RESP } = require("./helpers/http");
 const {
@@ -18,8 +22,10 @@ const { httpLogger } = require("./middlewares/http-logger");
 const { perfil } = require("./routes/perfil.routes");
 const { plataformas } = require("./routes/plataformas.routes");
 const { usuarios } = require("./routes/usuarios.routes");
+const { admin } = require("./routes/admin.routes");
 
 validateEnvironment();
+validateMailEnvironment();
 
 const app = express();
 const allowedOrigins = getAllowedOrigins();
@@ -56,6 +62,7 @@ app.get("/health", (_req, res) =>
 );
 
 app.use("/usuarios", usuarios);
+app.use("/admin", admin);
 app.use("/plataformas", plataformas);
 app.use("/perfil", perfil);
 

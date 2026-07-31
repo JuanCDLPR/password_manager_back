@@ -1,9 +1,11 @@
 const USER_PATTERN = /^[a-zA-Z0-9._-]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const cleanString = (value) =>
   typeof value === "string" ? value.trim() : "";
 
 const normalizeUser = (value) => cleanString(value).toLowerCase();
+const normalizeEmail = (value) => cleanString(value).toLowerCase();
 
 const isValidName = (value) => {
   const name = cleanString(value);
@@ -13,6 +15,11 @@ const isValidName = (value) => {
 const isValidUser = (value) => {
   const user = normalizeUser(value);
   return user.length >= 3 && user.length <= 50 && USER_PATTERN.test(user);
+};
+
+const isValidEmail = (value) => {
+  const email = normalizeEmail(value);
+  return email.length >= 3 && email.length <= 254 && EMAIL_PATTERN.test(email);
 };
 
 const isValidPassword = (value) =>
@@ -33,9 +40,11 @@ const isValidOptionalHttpUrl = (value) => {
 
 module.exports = {
   cleanString,
+  isValidEmail,
   isValidName,
   isValidOptionalHttpUrl,
   isValidPassword,
   isValidUser,
+  normalizeEmail,
   normalizeUser,
 };

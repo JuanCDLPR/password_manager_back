@@ -1,4 +1,4 @@
-# Arquitectura
+# 01. Arquitectura
 
 ## Vista general
 
@@ -19,8 +19,8 @@ flowchart LR
 
 ## Backend
 
-- `config/env.js`: valida `BD_CNN`, `SEED_TOKEN` y el puerto; obtiene orígenes
-  permitidos.
+- `config/env.js`: valida conexión, base por ambiente, correo, JWT y puerto;
+  obtiene orígenes permitidos.
 - `connection/config-mongo.js`: abre exclusivamente la conexión indicada por
   `BD_CNN`.
 - `middlewares/validar-jws.js`: verifica firma, audiencia, emisor, expiración y
@@ -48,8 +48,11 @@ conexión ordenadamente ante `SIGINT` o `SIGTERM`.
 | --- | --- |
 | `name` | 2 a 100 caracteres |
 | `user` | Normalizado a minúsculas, índice único |
+| `email` | Normalizado, único cuando existe |
 | `password` | Hash bcrypt, costo 12, `select: false` |
 | `tokenVersion` | Invalida JWT anteriores, `select: false` |
+| `role`, `status` | Autorización y habilitación de la cuenta |
+| `emailVerifiedAt`, `lastLoginAt` | Auditoría de correo y acceso |
 | `img` | URL opcional, máximo 2048 caracteres |
 | `fecha`, `actualizado` | Fechas de auditoría básica |
 

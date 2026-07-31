@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prueba de correo</title>
+  </head>
+  <body style="margin:0;background:#151515;color:#f5f5f5;font-family:Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#151515;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#242424;border:1px solid #3a3a3a;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 32px;background:#1d1d1d;">
+                <div style="font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#8ab4f8;">{{appName}}</div>
+                <h1 style="margin:10px 0 0;font-size:25px;line-height:1.25;color:#ffffff;">El envío de correo funciona</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.6;">Hola {{recipientName}},</p>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#dddddd;">{{message}}</p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#1b1b1b;border-radius:10px;padding:18px;">
+                  <tr>
+                    <td style="padding:4px;color:#a7a7a7;font-size:13px;">Ambiente</td>
+                    <td align="right" style="padding:4px;color:#ffffff;font-size:13px;">{{environment}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:4px;color:#a7a7a7;font-size:13px;">Enviado</td>
+                    <td align="right" style="padding:4px;color:#ffffff;font-size:13px;">{{sentAt}}</td>
+                  </tr>
+                </table>
+                <p style="margin:26px 0 0;text-align:center;">
+                  <a href="{{appUrl}}" style="display:inline-block;padding:12px 22px;border-radius:8px;background:#1976d2;color:#ffffff;text-decoration:none;font-weight:bold;">Abrir Password Manager</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 32px;border-top:1px solid #3a3a3a;color:#888888;font-size:12px;text-align:center;">
+                Correo técnico de prueba. No necesitas responder.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -19,6 +19,12 @@ const UsuariosSchema = Schema(
       unique: true,
       index: true,
     },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: 254,
+    },
     password: {
       type: String,
       required: true,
@@ -28,6 +34,24 @@ const UsuariosSchema = Schema(
       type: Number,
       default: 0,
       select: false,
+    },
+    role: {
+      type: String,
+      enum: ["user", "superadmin"],
+      default: "user",
+    },
+    status: {
+      type: String,
+      enum: ["active", "disabled"],
+      default: "active",
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
     },
     img: {
       type: String,
@@ -52,6 +76,14 @@ const UsuariosSchema = Schema(
         return result;
       },
     },
+  }
+);
+
+UsuariosSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { email: { $type: "string" } },
   }
 );
 

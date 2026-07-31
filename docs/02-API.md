@@ -1,4 +1,4 @@
-# Referencia HTTP de la API
+# 02. Referencia HTTP de la API
 
 ## Contrato compartido
 
@@ -116,13 +116,27 @@ Registra una cuenta. Devuelve 201.
 {
   "name": "Usuario Demo",
   "user": "usuario.demo",
+  "email": "usuario@example.com",
   "password": "ClaveSegura!1"
 }
 ```
 
 ### `POST /usuarios/session`
 
-Inicia sesión. Devuelve 200 con `name`, `user` y `token`.
+Inicia sesión con `login` (usuario o correo). Devuelve 200 con `name`, `user`,
+`email`, `role` y `token`.
+
+```json
+{
+  "login": "usuario@example.com",
+  "password": "ClaveSegura!1"
+}
+```
+
+### `GET /usuarios/session`
+
+Privada. Comprueba la sesión contra la cuenta actual y devuelve perfil básico,
+rol, estado y fechas de verificación/último acceso.
 
 ### `POST /usuarios/session/refresh`
 
@@ -133,6 +147,13 @@ Privada. Renueva la sesión:
   "password": "ClaveSegura!1"
 }
 ```
+
+## Administración
+
+### `GET /admin`
+
+Privada y exclusiva de `superadmin`. Comprueba que la autorización por rol está
+activa. Un usuario normal recibe `403 ROLE_REQUIRED`.
 
 ## Plataformas
 

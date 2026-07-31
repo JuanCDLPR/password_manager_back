@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const {
   autentificarte,
+  obtenerSesion,
   refrescarToken,
   registrar,
 } = require("../controllers/usuarios.controller.mg");
@@ -16,6 +17,7 @@ const router = Router();
 
 router.post("/", registerLimiter, asyncHandler(registrar));
 router.post("/session", authLimiter, asyncHandler(autentificarte));
+router.get("/session", validarJWT, asyncHandler(obtenerSesion));
 router.post(
   "/session/refresh",
   refreshLimiter,

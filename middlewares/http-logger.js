@@ -23,7 +23,8 @@ const formatDuration = (startedAt) => {
 
 const formatAuthentication = (req) => {
   if (req.authContext?.status === "authenticated" || req.uid) {
-    return `Autenticado (${req.authContext?.userId || req.uid})`;
+    const role = req.authContext?.role ? `, ${req.authContext.role}` : "";
+    return `Autenticado (${req.authContext?.userId || req.uid}${role})`;
   }
   if (req.authContext?.status === "missing") {
     return "No autenticado (token Bearer ausente)";

@@ -23,8 +23,28 @@ const validarJWT = async (req, _res, next) => {
       throw RESP.SessionInvalid("La sesión ya no es válida");
     }
 
+    if (usuario.status === "disabled") {
+      req.authContext = {
+        status: "authenticated",
+        userId: usuario.id,
+        role: usuario.role,
+      };
+      throw RESP.AccountDisabled();
+    }
+
     req.uid = usuario.id;
-    req.authContext = { status: "authenticated", userId: usuario.id };
+    req.auth = {
+      userId: usuario.id,
+      role: usuario.role,
+      status: usuario.status,
+      user: usuario.user,
+      email: usuario.email || null,
+    };
+    req.authContext = {
+      status: "authenticated",
+      userId: usuario.id,
+      role: usuario.role,
+    };
     return next();
   } catch (error) {
     if (error instanceof HttpError) return next(error);

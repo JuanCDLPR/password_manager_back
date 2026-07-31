@@ -31,6 +31,8 @@ const send = (res, status, data, message, meta) => {
 
 const RESP = Object.freeze({
   Error: createError,
+  AccountDisabled: (message, details) =>
+    createError("ACCOUNT_DISABLED", message, details),
   AuthRequired: (message, details) =>
     createError("AUTH_REQUIRED", message, details),
   Conflict: (message, details) => createError("CONFLICT", message, details),
@@ -48,6 +50,8 @@ const RESP = Object.freeze({
     createError("RATE_LIMITED", message, details),
   RequestTooLarge: (message, details) =>
     createError("REQUEST_TOO_LARGE", message, details),
+  RoleRequired: (message, details) =>
+    createError("ROLE_REQUIRED", message, details),
   SessionInvalid: (message, details) =>
     createError("SESSION_INVALID", message, details),
   Validation: (message, details) =>
