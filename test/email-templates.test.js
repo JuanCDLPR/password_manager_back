@@ -49,3 +49,17 @@ test("exige un objeto plano como variables", async () => {
       error.code === "EMAIL_TEMPLATE_DATA_INVALID"
   );
 });
+
+test("renderiza el template de invitación sin exponer HTML recibido", async () => {
+  const result = await renderEmailTemplate("invitation", {
+    appName: "Password Manager",
+    invitedName: "Persona <b>invitada</b>",
+    inviterName: "Administrador",
+    invitationUrl: "https://example.com/registrar?invitation=abc",
+    expiresAt: "31 de julio de 2026",
+  });
+
+  assert.match(result.subject, /invitación/i);
+  assert.match(result.html, /Persona &lt;b&gt;invitada&lt;\/b&gt;/);
+  assert.doesNotMatch(result.html, /Persona <b>invitada<\/b>/);
+});

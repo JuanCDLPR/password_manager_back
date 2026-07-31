@@ -22,5 +22,14 @@ const refreshLimiter = createLimiter(
   10,
   "Demasiados intentos de renovación; inténtalo más tarde"
 );
+const invitationLimiter = createLimiter(
+  30,
+  "Demasiadas consultas de invitación; inténtalo más tarde"
+);
 
-module.exports = { authLimiter, refreshLimiter, registerLimiter };
+module.exports = {
+  authLimiter,
+  invitationLimiter,
+  refreshLimiter,
+  registerLimiter,
+};

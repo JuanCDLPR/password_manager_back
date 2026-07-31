@@ -13,6 +13,16 @@ const TEMPLATE_CATALOG = Object.freeze({
       "Enviado: {{sentAt}}\n" +
       "{{appUrl}}",
   }),
+  invitation: Object.freeze({
+    subject: "Tu invitación a {{appName}}",
+    htmlFile: "invitation.html",
+    text:
+      "Hola {{invitedName}}.\n\n" +
+      "{{inviterName}} te invitó a crear una cuenta en {{appName}}.\n" +
+      "La invitación vence el {{expiresAt}} y solo puede utilizarse una vez.\n\n" +
+      "{{invitationUrl}}\n\n" +
+      "Si no esperabas este correo, puedes ignorarlo.",
+  }),
 });
 
 class EmailTemplateError extends Error {

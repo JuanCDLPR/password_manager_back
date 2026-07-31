@@ -17,6 +17,8 @@ plataformas.
 - Roles `user`/`superadmin`, estado de cuenta y autorización administrativa.
 - Bases separadas y protegidas por ambiente.
 - Servicio opcional de correo con Mailgun.
+- Registro privado mediante invitaciones de un solo uso.
+- Panel de invitaciones exclusivo para `superadmin`.
 - Invalidación de sesiones anteriores al cambiar la contraseña.
 - Consulta y edición segura del perfil.
 - CRUD de plataformas aislado por propietario.
@@ -69,6 +71,7 @@ MAILGUN_DOMAIN=
 MAILGUN_BASE_URL=https://api.mailgun.net
 MAIL_FROM=Password Manager <postmaster@sandboxXXXXXXXX.mailgun.org>
 APP_PUBLIC_URL=http://localhost:3021
+INVITATION_EXPIRES_HOURS=24
 ```
 
 `BD_CNN` es la única fuente de la cadena de conexión y `MONGODB_DB_NAME`
@@ -157,6 +160,7 @@ index.js      Configuración e inicio ordenado del servidor
 - [07. Bootstrap del administrador](docs/07-BOOTSTRAP-ADMIN.md)
 - [08. Mailgun](docs/08-MAILGUN.md)
 - [09. Templates HTML de correo](docs/09-PLANTILLAS-CORREO.md)
+- [10. Invitaciones y registro privado](docs/10-INVITACIONES.md)
 
 ## Frontend
 

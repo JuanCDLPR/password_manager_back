@@ -33,6 +33,7 @@ flowchart LR
   con estado, duración, usuario y código de error, sin secretos.
 - `controllers/`: valida entradas y aplica autorización a nivel de documento.
 - `models/`: define usuario y plataforma. Los campos sensibles están ocultos.
+- `services/invitation.service.js`: genera tokens, hashes, expiraciones y URLs.
 - `config/http-catalog.js`: única fuente de estados, códigos y mensajes HTTP.
 - `helpers/http.js`: expone la API `RESP` para éxitos y errores semánticos.
 - `helpers/async-handler.js`: envía rechazos asíncronos al middleware central.
@@ -67,6 +68,13 @@ conexión ordenadamente ante `SIGINT` o `SIGTERM`.
 
 Cada consulta, actualización y eliminación usa simultáneamente `_id` e
 `id_usuario`; conocer el identificador de otro usuario no concede acceso.
+
+### Invitación
+
+Guarda correo, nombre, estado, expiración, creador y auditoría de consumo o
+revocación. `tokenHash` y `activeEmail` están ocultos; el token original solo
+existe durante el envío. Un índice único sobre `activeEmail` impide dos
+invitaciones pendientes para el mismo correo.
 
 ## Sesión
 

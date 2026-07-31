@@ -5,6 +5,7 @@ const { RESP } = require("../helpers/http");
 const {
   formatAuthentication,
   httpLogger,
+  sanitizePath,
   sanitizeQuery,
 } = require("../middlewares/http-logger");
 
@@ -15,6 +16,14 @@ test("RESP obtiene estado, código y mensaje desde el catálogo", () => {
   assert.equal(error.code, "VALIDATION_ERROR");
   assert.equal(error.message, "Nombre inválido");
   assert.deepEqual(error.details, { fields: ["name"] });
+});
+
+test("el logger redacta tokens de invitación incluidos en la ruta", () => {
+  assert.equal(
+    sanitizePath("/invitations/token-super-secreto"),
+    "/invitations/[REDACTED]"
+  );
+  assert.equal(sanitizePath("/plataformas/123"), "/plataformas/123");
 });
 
 test("RESP usa el mensaje predeterminado del catálogo", () => {

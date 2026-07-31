@@ -22,6 +22,10 @@
 | Ambientes | Base explícita y bloqueo cruzado entre dev/test/producción |
 | Administración | Rol consultado en MongoDB y middleware `requireRole` |
 | Estado de cuenta | Las cuentas desactivadas no pueden usar sesiones |
+| Registro privado | Invitación ligada al correo, expirable y de un solo uso |
+| Token de invitación | 256 bits aleatorios; solo SHA-256 persiste en MongoDB |
+| Logging de invitación | El segmento del token se muestra como `[REDACTED]` |
+| Consistencia | Usuario y consumo de invitación en transacción MongoDB |
 
 ## Verificación realizada
 

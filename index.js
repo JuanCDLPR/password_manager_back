@@ -21,6 +21,7 @@ const { requestContext } = require("./middlewares/request-context");
 const { httpLogger } = require("./middlewares/http-logger");
 const { perfil } = require("./routes/perfil.routes");
 const { plataformas } = require("./routes/plataformas.routes");
+const { invitaciones } = require("./routes/invitaciones.routes");
 const { usuarios } = require("./routes/usuarios.routes");
 const { admin } = require("./routes/admin.routes");
 
@@ -62,6 +63,7 @@ app.get("/health", (_req, res) =>
 );
 
 app.use("/usuarios", usuarios);
+app.use("/invitations", invitaciones);
 app.use("/admin", admin);
 app.use("/plataformas", plataformas);
 app.use("/perfil", perfil);

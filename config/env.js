@@ -1,5 +1,6 @@
 const REQUIRED_ENVIRONMENT_VARIABLES = [
   "BD_CNN",
+  "APP_PUBLIC_URL",
   "MONGODB_DB_NAME",
   "PRODUCTION_DB_NAME",
   "SEED_TOKEN",
@@ -49,6 +50,13 @@ const validateEnvironment = () => {
     throw new Error("BD_CNN debe ser una cadena de conexión de MongoDB");
   }
 
+  try {
+    const publicUrl = new URL(process.env.APP_PUBLIC_URL);
+    if (!["http:", "https:"].includes(publicUrl.protocol)) throw new Error();
+  } catch {
+    throw new Error("APP_PUBLIC_URL debe ser una URL HTTP o HTTPS válida");
+  }
+
   if (process.env.SEED_TOKEN.length < 24) {
     throw new Error("SEED_TOKEN debe tener al menos 24 caracteres");
   }
@@ -58,6 +66,17 @@ const validateEnvironment = () => {
   const port = Number(process.env.PORT || 3000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("PORT debe ser un puerto válido");
+  }
+
+  const invitationHours = Number(process.env.INVITATION_EXPIRES_HOURS || 24);
+  if (
+    !Number.isInteger(invitationHours) ||
+    invitationHours < 1 ||
+    invitationHours > 168
+  ) {
+    throw new Error(
+      "INVITATION_EXPIRES_HOURS debe ser un entero entre 1 y 168"
+    );
   }
 };
 

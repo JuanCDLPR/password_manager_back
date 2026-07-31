@@ -39,6 +39,7 @@ const validarJWT = async (req, _res, next) => {
       status: usuario.status,
       user: usuario.user,
       email: usuario.email || null,
+      name: usuario.name,
     };
     req.authContext = {
       status: "authenticated",

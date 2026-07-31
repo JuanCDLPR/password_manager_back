@@ -24,6 +24,11 @@ const HTTP_ERRORS = Object.freeze({
     code: "INTERNAL_ERROR",
     message: "Error interno del servidor",
   },
+  EMAIL_DELIVERY_FAILED: {
+    status: 502,
+    code: "EMAIL_DELIVERY_FAILED",
+    message: "El proveedor de correo no pudo aceptar el mensaje",
+  },
   INVALID_CREDENTIALS: {
     status: 401,
     code: "INVALID_CREDENTIALS",
@@ -33,6 +38,11 @@ const HTTP_ERRORS = Object.freeze({
     status: 400,
     code: "INVALID_JSON",
     message: "El cuerpo JSON no es válido",
+  },
+  INVITATION_INVALID: {
+    status: 410,
+    code: "INVITATION_INVALID",
+    message: "La invitación no existe, expiró o ya fue utilizada",
   },
   INVALID_IDENTIFIER: {
     status: 400,

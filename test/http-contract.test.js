@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { after, before, test } = require("node:test");
 
 process.env.BD_CNN ||= "mongodb://127.0.0.1:27017/password_manager_test";
+process.env.APP_PUBLIC_URL ||= "http://localhost:3021";
 process.env.MONGODB_DB_NAME ||= "PasswordManagerTest";
 process.env.PRODUCTION_DB_NAME ||= "PasswordManager";
 process.env.SEED_TOKEN ||= "test_seed_with_more_than_32_characters";
@@ -58,6 +59,14 @@ test("la ruta administrativa exige autenticación", async () => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("rechaza invitaciones con formato inválido sin consultar la base", async () => {
+  const response = await fetch(`${baseUrl}/invitations/token-invalido`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 410);
+  assert.equal(payload.error.code, "INVITATION_INVALID");
 });
 
 test("responde 400 cuando el JSON es inválido", async () => {

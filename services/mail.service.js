@@ -61,9 +61,33 @@ const sendConfigurationTest = (to, recipientName = "Juan Carlos") =>
     },
   });
 
+const sendInvitationEmail = ({
+  to,
+  invitedName,
+  inviterName,
+  invitationUrl,
+  expiresAt,
+}) =>
+  sendTemplateMail({
+    to,
+    templateName: "invitation",
+    data: {
+      appName: "Password Manager",
+      invitedName,
+      inviterName,
+      invitationUrl,
+      expiresAt: new Intl.DateTimeFormat("es-MX", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "America/Chihuahua",
+      }).format(expiresAt),
+    },
+  });
+
 module.exports = {
   isMailEnabled,
   sendConfigurationTest,
+  sendInvitationEmail,
   sendMail,
   sendTemplateMail,
 };

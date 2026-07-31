@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const { generarJWT } = require("../helpers/jwt");
 const { RESP } = require("../helpers/http");
 const {
@@ -11,35 +12,82 @@ const {
   normalizeUser,
 } = require("../helpers/validation");
 const UsuariosModel = require("../models/usuarios.model");
+const InvitacionesModel = require("../models/invitaciones.model");
+const {
+  hashInvitationToken,
+  isValidInvitationToken,
+} = require("../services/invitation.service");
 
 const registrar = async (req, res) => {
   const name = cleanString(req.body.name);
   const user = normalizeUser(req.body.user);
   const email = normalizeEmail(req.body.email);
   const { password } = req.body;
+  const invitationToken = cleanString(req.body.invitationToken);
 
   const invalidFields = [
     ...(!isValidName(name) ? ["name"] : []),
     ...(!isValidUser(user) ? ["user"] : []),
     ...(!isValidEmail(email) ? ["email"] : []),
     ...(!isValidPassword(password) ? ["password"] : []),
+    ...(!isValidInvitationToken(invitationToken)
+      ? ["invitationToken"]
+      : []),
   ];
 
   if (invalidFields.length) {
     throw RESP.Validation(
-      "Nombre, usuario, correo o contraseña no cumplen el formato requerido",
+      "Nombre, usuario, correo, contraseña o invitación no cumplen el formato requerido",
       { fields: invalidFields }
     );
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await UsuariosModel.create({
-    name,
-    user,
-    email,
-    password: passwordHash,
-    role: "user",
-    status: "active",
+  const now = new Date();
+
+  await mongoose.connection.transaction(async (session) => {
+    const invitation = await InvitacionesModel.findOne({
+      tokenHash: hashInvitationToken(invitationToken),
+      email,
+      status: "pending",
+      expiresAt: { $gt: now },
+    }).session(session);
+
+    if (!invitation) throw RESP.InvitationInvalid();
+
+    const [usuario] = await UsuariosModel.create(
+      [
+        {
+          name,
+          user,
+          email,
+          password: passwordHash,
+          role: "user",
+          status: "active",
+          emailVerifiedAt: now,
+        },
+      ],
+      { session }
+    );
+
+    const consumed = await InvitacionesModel.updateOne(
+      {
+        _id: invitation.id,
+        status: "pending",
+        expiresAt: { $gt: now },
+      },
+      {
+        $set: {
+          status: "used",
+          consumedAt: now,
+          consumedBy: usuario.id,
+        },
+        $unset: { activeEmail: 1 },
+      },
+      { session }
+    );
+
+    if (consumed.modifiedCount !== 1) throw RESP.InvitationInvalid();
   });
 
   return RESP.Created(res, null, "Usuario registrado correctamente");

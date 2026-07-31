@@ -36,6 +36,8 @@ const RESP = Object.freeze({
   AuthRequired: (message, details) =>
     createError("AUTH_REQUIRED", message, details),
   Conflict: (message, details) => createError("CONFLICT", message, details),
+  EmailDeliveryFailed: (message, details) =>
+    createError("EMAIL_DELIVERY_FAILED", message, details),
   Forbidden: (message, details) => createError("FORBIDDEN", message, details),
   Internal: (message, details) =>
     createError("INTERNAL_ERROR", message, details),
@@ -43,6 +45,8 @@ const RESP = Object.freeze({
     createError("INVALID_CREDENTIALS", message, details),
   InvalidJson: (message, details) =>
     createError("INVALID_JSON", message, details),
+  InvitationInvalid: (message, details) =>
+    createError("INVITATION_INVALID", message, details),
   InvalidIdentifier: (message, details) =>
     createError("INVALID_IDENTIFIER", message, details),
   NotFound: (message, details) => createError("NOT_FOUND", message, details),

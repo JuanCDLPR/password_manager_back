@@ -110,16 +110,27 @@ Pública. Devuelve 200 cuando el proceso HTTP está disponible.
 
 ### `POST /usuarios`
 
-Registra una cuenta. Devuelve 201.
+Registra una cuenta invitada. Devuelve 201. El correo y el token deben
+corresponder a una invitación pendiente y vigente.
 
 ```json
 {
   "name": "Usuario Demo",
   "user": "usuario.demo",
   "email": "usuario@example.com",
-  "password": "ClaveSegura!1"
+  "password": "ClaveSegura!1",
+  "invitationToken": "token_base64url_recibido_por_correo"
 }
 ```
+
+La creación del usuario y el consumo de la invitación son una sola transacción.
+Sin invitación válida devuelve `410 INVITATION_INVALID`.
+
+### `GET /invitations/:token`
+
+Pública y limitada por frecuencia. Valida el enlace antes de mostrar el
+formulario y devuelve correo, nombre invitado y expiración. Nunca devuelve el
+hash almacenado.
 
 ### `POST /usuarios/session`
 
@@ -154,6 +165,26 @@ Privada. Renueva la sesión:
 
 Privada y exclusiva de `superadmin`. Comprueba que la autorización por rol está
 activa. Un usuario normal recibe `403 ROLE_REQUIRED`.
+
+### Invitaciones administrativas
+
+Todas requieren `superadmin`.
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/admin/invitations` | Lista hasta 200 invitaciones |
+| POST | `/admin/invitations` | Crea y envía una invitación |
+| POST | `/admin/invitations/:id/resend` | Rota token, extiende y reenvía |
+| DELETE | `/admin/invitations/:id` | Revoca conservando auditoría |
+
+Creación:
+
+```json
+{
+  "invitedName": "Persona Invitada",
+  "email": "persona@example.com"
+}
+```
 
 ## Plataformas
 

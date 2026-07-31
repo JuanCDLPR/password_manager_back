@@ -50,3 +50,10 @@ await sendTemplateMail({
 
 Al agregar verificación, invitaciones o recuperación de cuenta, se debe crear
 un archivo y una entrada de catálogo independientes para cada caso.
+
+Templates actuales:
+
+| Nombre | Uso |
+| --- | --- |
+| `configuration-test` | Comprobar la integración con Mailgun |
+| `invitation` | Enviar el enlace privado de registro |

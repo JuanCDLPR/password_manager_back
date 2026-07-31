@@ -16,6 +16,12 @@ const sanitizeQuery = (query = {}) =>
     ])
   );
 
+const sanitizePath = (path = "") =>
+  path.replace(
+    /(\/invitations\/)[^/?#]+/gi,
+    "$1[REDACTED]"
+  );
+
 const formatDuration = (startedAt) => {
   const nanoseconds = process.hrtime.bigint() - startedAt;
   return `${(Number(nanoseconds) / 1e6).toFixed(2)} ms`;
@@ -55,7 +61,7 @@ const httpLogger = (req, res, next) => {
         "┌─ HTTP REQUEST ─────────────────────────────────────────",
         `│ ID:       ${req.requestId}`,
         `│ Método:   ${req.method}`,
-        `│ Ruta:     ${req.path}`,
+        `│ Ruta:     ${sanitizePath(req.path)}`,
         `│ Query:    ${queryText}`,
         `│ Estado:   ${res.statusCode} ${statusLabel}`,
         `│ Duración: ${formatDuration(startedAt)}`,
@@ -71,4 +77,9 @@ const httpLogger = (req, res, next) => {
   next();
 };
 
-module.exports = { formatAuthentication, httpLogger, sanitizeQuery };
+module.exports = {
+  formatAuthentication,
+  httpLogger,
+  sanitizePath,
+  sanitizeQuery,
+};

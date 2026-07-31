@@ -4,7 +4,9 @@
 
 | Área | Estado |
 | --- | --- |
-| Registro/login | Implementado y endurecido |
+| Registro/login | Registro por invitación e inicio por usuario/correo |
+| Administración | Rol, bootstrap y panel de invitaciones |
+| Correo | Mailgun y templates HTML reutilizables |
 | Renovación | POST seguro e integrado |
 | Perfil | Implementado; campos sensibles excluidos |
 | Plataformas | CRUD con aislamiento por usuario |
@@ -31,6 +33,8 @@
 - Contrato HTTP uniforme sin códigos duplicados dentro del JSON.
 - Rutas REST, errores tipados y `requestId` reutilizable entre frontend/backend.
 - Dependencias del backend con auditoría en cero.
+- Invitaciones de un solo uso con token hasheado y expiración.
+- Consumo de invitación y creación de cuenta en una transacción.
 
 ## Próxima prioridad: diseño de la bóveda
 
