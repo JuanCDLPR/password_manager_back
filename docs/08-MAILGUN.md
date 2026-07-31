@@ -18,14 +18,19 @@ MAILGUN_API_KEY=
 MAILGUN_DOMAIN=
 MAILGUN_BASE_URL=https://api.mailgun.net
 MAIL_FROM=Password Manager <postmaster@sandboxXXXXXXXX.mailgun.org>
-APP_PUBLIC_URL=http://localhost:3021
+APP_PUBLIC_URL_LOCAL=http://localhost:3021
+APP_PUBLIC_URL_PRODUCTION=https://tu-frontend.vercel.app
 ```
 
 - `MAILGUN_API_KEY`: API key privada; solo backend.
 - `MAILGUN_DOMAIN`: dominio sandbox o dominio propio verificado.
 - `MAILGUN_BASE_URL`: usa `https://api.eu.mailgun.net` si la cuenta está en EU.
 - `MAIL_FROM`: remitente permitido por el dominio.
-- `APP_PUBLIC_URL`: base para futuros enlaces de invitación/verificación.
+- `APP_PUBLIC_URL_LOCAL`: base usada con `development` y `test`.
+- `APP_PUBLIC_URL_PRODUCTION`: base usada automáticamente con `production`.
+
+Los templates y enlaces consultan la URL mediante la configuración central; no
+deben leer estas variables directamente.
 
 Para esta aplicación se debe crear una **Domain Sending Key** limitada al
 dominio, no reutilizar la clave primaria de la cuenta. Si una clave se pega en

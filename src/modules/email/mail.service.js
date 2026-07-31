@@ -1,5 +1,6 @@
 const formData = require("form-data");
 const Mailgun = require("mailgun.js");
+const { getAppPublicUrl } = require("../../config/env");
 const { renderEmailTemplate } = require("./email-template.service");
 
 // Este módulo es el único punto de integración con el proveedor de correo.
@@ -59,7 +60,7 @@ const sendConfigurationTest = (to, recipientName = "Juan Carlos") =>
         timeStyle: "short",
         timeZone: "America/Chihuahua",
       }).format(new Date()),
-      appUrl: process.env.APP_PUBLIC_URL,
+      appUrl: getAppPublicUrl(),
     },
   });
 

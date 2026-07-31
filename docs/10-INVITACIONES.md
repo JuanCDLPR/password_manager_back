@@ -13,6 +13,9 @@ una invitación y cada enlace:
 - puede revocarse o reenviarse;
 - nunca se devuelve desde la API administrativa ni se imprime en logs.
 
+La URL del enlace se elige automáticamente: local para `development`/`test` y
+pública para `production`.
+
 ## Flujo
 
 ```text

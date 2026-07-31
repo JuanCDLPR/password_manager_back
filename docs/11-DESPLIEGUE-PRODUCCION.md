@@ -12,6 +12,8 @@ Hay cuatro destinos independientes:
 | `BD_CNN` | Selecciona el servidor o clúster MongoDB |
 | `MONGODB_DB_NAME` | Selecciona la base concreta dentro del clúster |
 | `PRODUCTION_DB_NAME` | Solo identifica y protege el nombre de producción |
+| `APP_PUBLIC_URL_LOCAL` | URL del frontend para desarrollo y pruebas |
+| `APP_PUBLIC_URL_PRODUCTION` | URL del frontend elegida en producción |
 | `REACT_APP_API_URL` | Indica al navegador qué backend debe consumir |
 
 `PRODUCTION_DB_NAME` no establece la conexión. Si
@@ -38,7 +40,8 @@ PORT=3024
 CORS_ORIGINS=https://TU-FRONTEND.vercel.app
 TRUST_PROXY=true
 HTTP_LOGS=true
-APP_PUBLIC_URL=https://TU-FRONTEND.vercel.app
+APP_PUBLIC_URL_LOCAL=http://localhost:3021
+APP_PUBLIC_URL_PRODUCTION=https://TU-FRONTEND.vercel.app
 INVITATION_EXPIRES_HOURS=24
 MAIL_ENABLED=true
 MAILGUN_API_KEY=SECRETO_DEL_HOSTING
@@ -83,5 +86,5 @@ Antes de enviar invitaciones reales:
 1. `/health` debe responder desde el backend público.
 2. El frontend debe consumir el backend público, no `localhost`.
 3. CORS debe contener exactamente el origen del frontend.
-4. `APP_PUBLIC_URL` debe generar enlaces públicos de registro.
+4. `APP_PUBLIC_URL_PRODUCTION` debe generar enlaces públicos de registro.
 5. El log de conexión debe mostrar `PasswordManager (production)`.

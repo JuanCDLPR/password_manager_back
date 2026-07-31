@@ -30,19 +30,46 @@ test("almacena una huella SHA-256 y no el token original", () => {
   assert.equal(hashInvitationToken("token inválido"), "");
 });
 
-test("construye el enlace de registro desde APP_PUBLIC_URL", () => {
-  const original = process.env.APP_PUBLIC_URL;
-  process.env.APP_PUBLIC_URL = "https://password.example/app?old=true";
+test("construye el enlace con la URL local fuera de producción", () => {
+  const originalEnvironment = process.env.NODE_ENV;
+  const originalLocalUrl = process.env.APP_PUBLIC_URL_LOCAL;
+  process.env.NODE_ENV = "development";
+  process.env.APP_PUBLIC_URL_LOCAL =
+    "https://password-local.example/app?old=true";
+
+  try {
+    const token = createInvitationToken();
+    const url = new URL(buildInvitationUrl(token));
+    assert.equal(url.origin, "https://password-local.example");
+    assert.equal(url.pathname, "/registrar");
+    assert.equal(url.searchParams.get("invitation"), token);
+  } finally {
+    if (originalEnvironment === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalEnvironment;
+    if (originalLocalUrl === undefined) delete process.env.APP_PUBLIC_URL_LOCAL;
+    else process.env.APP_PUBLIC_URL_LOCAL = originalLocalUrl;
+  }
+});
+
+test("construye el enlace con la URL de producción automáticamente", () => {
+  const originalEnvironment = process.env.NODE_ENV;
+  const originalProductionUrl = process.env.APP_PUBLIC_URL_PRODUCTION;
+  process.env.NODE_ENV = "production";
+  process.env.APP_PUBLIC_URL_PRODUCTION = "https://password.example";
 
   try {
     const token = createInvitationToken();
     const url = new URL(buildInvitationUrl(token));
     assert.equal(url.origin, "https://password.example");
-    assert.equal(url.pathname, "/registrar");
     assert.equal(url.searchParams.get("invitation"), token);
   } finally {
-    if (original === undefined) delete process.env.APP_PUBLIC_URL;
-    else process.env.APP_PUBLIC_URL = original;
+    if (originalEnvironment === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalEnvironment;
+    if (originalProductionUrl === undefined) {
+      delete process.env.APP_PUBLIC_URL_PRODUCTION;
+    } else {
+      process.env.APP_PUBLIC_URL_PRODUCTION = originalProductionUrl;
+    }
   }
 });
 

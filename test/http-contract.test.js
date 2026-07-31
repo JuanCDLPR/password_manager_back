@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const { after, before, test } = require("node:test");
 
 process.env.BD_CNN ||= "mongodb://127.0.0.1:27017/password_manager_test";
-process.env.APP_PUBLIC_URL ||= "http://localhost:3021";
+process.env.APP_PUBLIC_URL_LOCAL ||= "http://localhost:3021";
 process.env.MONGODB_DB_NAME ||= "PasswordManagerTest";
 process.env.PRODUCTION_DB_NAME ||= "PasswordManager";
 process.env.SEED_TOKEN ||= "test_seed_with_more_than_32_characters";

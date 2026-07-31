@@ -1,6 +1,7 @@
 "use strict";
 
 const { createHash, randomBytes } = require("node:crypto");
+const { getAppPublicUrl } = require("../../config/env");
 
 const INVITATION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
@@ -20,7 +21,7 @@ const getInvitationExpiration = (now = new Date()) => {
 };
 
 const buildInvitationUrl = (token) => {
-  const baseUrl = new URL(process.env.APP_PUBLIC_URL);
+  const baseUrl = new URL(getAppPublicUrl());
   baseUrl.pathname = "/registrar";
   baseUrl.search = "";
   baseUrl.hash = "";

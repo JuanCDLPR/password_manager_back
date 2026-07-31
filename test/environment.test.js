@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const {
+  getAppPublicUrl,
+  getAppPublicUrlKey,
   validateDatabaseEnvironment,
 } = require("../src/config/env");
 
@@ -61,4 +63,33 @@ test("el ambiente test exige una base identificable como pruebas", () => {
         /debe incluir 'test'/
       )
   );
+});
+
+test("selecciona la URL pública según NODE_ENV", () => {
+  const original = {
+    NODE_ENV: process.env.NODE_ENV,
+    APP_PUBLIC_URL_LOCAL: process.env.APP_PUBLIC_URL_LOCAL,
+    APP_PUBLIC_URL_PRODUCTION: process.env.APP_PUBLIC_URL_PRODUCTION,
+  };
+
+  try {
+    process.env.APP_PUBLIC_URL_LOCAL = "http://localhost:3021";
+    process.env.APP_PUBLIC_URL_PRODUCTION = "https://password.example";
+
+    process.env.NODE_ENV = "development";
+    assert.equal(getAppPublicUrlKey(), "APP_PUBLIC_URL_LOCAL");
+    assert.equal(getAppPublicUrl(), "http://localhost:3021");
+
+    process.env.NODE_ENV = "test";
+    assert.equal(getAppPublicUrl(), "http://localhost:3021");
+
+    process.env.NODE_ENV = "production";
+    assert.equal(getAppPublicUrlKey(), "APP_PUBLIC_URL_PRODUCTION");
+    assert.equal(getAppPublicUrl(), "https://password.example");
+  } finally {
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });

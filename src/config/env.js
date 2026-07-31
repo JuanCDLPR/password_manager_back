@@ -2,12 +2,19 @@
 
 const REQUIRED_ENVIRONMENT_VARIABLES = [
   "BD_CNN",
-  "APP_PUBLIC_URL",
   "MONGODB_DB_NAME",
   "PRODUCTION_DB_NAME",
   "SEED_TOKEN",
 ];
 const VALID_ENVIRONMENTS = new Set(["development", "test", "production"]);
+
+const getAppPublicUrlKey = () =>
+  process.env.NODE_ENV === "production"
+    ? "APP_PUBLIC_URL_PRODUCTION"
+    : "APP_PUBLIC_URL_LOCAL";
+
+const getAppPublicUrl = () =>
+  process.env[getAppPublicUrlKey()]?.trim() || "";
 
 const validateDatabaseEnvironment = () => {
   const environment = process.env.NODE_ENV || "development";
@@ -52,11 +59,15 @@ const validateEnvironment = () => {
     throw new Error("BD_CNN debe ser una cadena de conexión de MongoDB");
   }
 
+  const appPublicUrlKey = getAppPublicUrlKey();
+  const appPublicUrl = getAppPublicUrl();
   try {
-    const publicUrl = new URL(process.env.APP_PUBLIC_URL);
+    const publicUrl = new URL(appPublicUrl);
     if (!["http:", "https:"].includes(publicUrl.protocol)) throw new Error();
   } catch {
-    throw new Error("APP_PUBLIC_URL debe ser una URL HTTP o HTTPS válida");
+    throw new Error(
+      `${appPublicUrlKey} debe ser una URL HTTP o HTTPS válida`
+    );
   }
 
   if (process.env.SEED_TOKEN.length < 24) {
@@ -103,6 +114,8 @@ const getAllowedOrigins = () =>
 
 module.exports = {
   getAllowedOrigins,
+  getAppPublicUrl,
+  getAppPublicUrlKey,
   validateDatabaseEnvironment,
   validateEnvironment,
   validateMailEnvironment,
