@@ -161,6 +161,7 @@ index.js      Configuración e inicio ordenado del servidor
 - [08. Mailgun](docs/08-MAILGUN.md)
 - [09. Templates HTML de correo](docs/09-PLANTILLAS-CORREO.md)
 - [10. Invitaciones y registro privado](docs/10-INVITACIONES.md)
+- [11. Configuración y despliegue](docs/11-DESPLIEGUE-PRODUCCION.md)
 
 ## Frontend
 
