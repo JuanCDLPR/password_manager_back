@@ -28,6 +28,8 @@
 - Eliminación de MySQL, CryptoJS y código heredado.
 - URL del frontend mediante `REACT_APP_API_URL`.
 - Cliente HTTP unificado y cierre de sesión sin limpiar datos ajenos.
+- Contrato HTTP uniforme sin códigos duplicados dentro del JSON.
+- Rutas REST, errores tipados y `requestId` reutilizable entre frontend/backend.
 - Dependencias del backend con auditoría en cero.
 
 ## Próxima prioridad: diseño de la bóveda
@@ -54,5 +56,8 @@ conozca ni la clave ni los secretos.
 - Añadir fallback de React Router al servidor de producción.
 - Diagnosticar o sustituir el build de Create React App: en la validación actual
   `react-scripts build` quedó activo sin finalizar ni emitir salida.
+- Resolver la deuda de dependencias del frontend: `npm audit` reporta 80
+  vulnerabilidades dentro del árbol heredado de Create React App. No se aplicó
+  `npm audit fix --force` porque implicaría cambios incompatibles.
 - Evaluar migración de Create React App a Vite.
 - Revisar y reducir librerías de UI duplicadas.

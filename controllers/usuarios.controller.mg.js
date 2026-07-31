@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
-const { request, response } = require("express");
 const { generarJWT } = require("../helpers/jwt");
+const { RESP } = require("../helpers/http");
 const {
   cleanString,
   isValidName,
@@ -8,114 +8,78 @@ const {
   isValidUser,
   normalizeUser,
 } = require("../helpers/validation");
-const { Respuesta } = require("../models/repuesta");
 const UsuariosModel = require("../models/usuarios.model");
 
-const registrar = async (req = request, res = response) => {
+const registrar = async (req, res) => {
   const name = cleanString(req.body.name);
   const user = normalizeUser(req.body.user);
   const { password } = req.body;
 
-  if (!isValidName(name) || !isValidUser(user) || !isValidPassword(password)) {
-    return res.status(400).json(
-      Respuesta(
-        400,
-        "error",
-        "Nombre, usuario o contraseña no cumplen el formato requerido",
-        []
-      )
+  const invalidFields = [
+    ...(!isValidName(name) ? ["name"] : []),
+    ...(!isValidUser(user) ? ["user"] : []),
+    ...(!isValidPassword(password) ? ["password"] : []),
+  ];
+
+  if (invalidFields.length) {
+    throw RESP.Validation(
+      "Nombre, usuario o contraseña no cumplen el formato requerido",
+      { fields: invalidFields }
     );
   }
 
-  try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    await UsuariosModel.create({ name, user, password: passwordHash });
+  const passwordHash = await bcrypt.hash(password, 12);
+  await UsuariosModel.create({ name, user, password: passwordHash });
 
-    return res
-      .status(201)
-      .json(Respuesta(201, "ok", "Usuario registrado correctamente", []));
-  } catch (error) {
-    if (error?.code === 11000) {
-      return res
-        .status(409)
-        .json(Respuesta(409, "error", "Este usuario ya existe", []));
-    }
-
-    return res
-      .status(500)
-      .json(Respuesta(500, "error", "No fue posible registrar al usuario", []));
-  }
+  return RESP.Created(res, null, "Usuario registrado correctamente");
 };
 
-const autentificarte = async (req = request, res = response) => {
+const autentificarte = async (req, res) => {
   const user = normalizeUser(req.body.user);
   const { password } = req.body;
 
   if (!isValidUser(user) || typeof password !== "string") {
-    return res
-      .status(400)
-      .json(Respuesta(400, "error", "Credenciales inválidas", []));
+    throw RESP.Validation("Usuario y contraseña son obligatorios");
   }
 
-  try {
-    const usuario = await UsuariosModel.findOne({ user }).select(
-      "+password +tokenVersion"
-    );
-    const passwordValido =
-      usuario && (await bcrypt.compare(password, usuario.password));
+  const usuario = await UsuariosModel.findOne({ user }).select(
+    "+password +tokenVersion"
+  );
+  const passwordValido =
+    usuario && (await bcrypt.compare(password, usuario.password));
 
-    if (!passwordValido) {
-      return res
-        .status(401)
-        .json(Respuesta(401, "error", "Credenciales incorrectas", []));
-    }
-
-    const token = await generarJWT(usuario.id, usuario.tokenVersion);
-
-    return res.status(200).json(
-      Respuesta(200, "ok", "Autenticación correcta", {
-        name: usuario.name,
-        user: usuario.user,
-        token,
-      })
-    );
-  } catch {
-    return res
-      .status(500)
-      .json(Respuesta(500, "error", "No fue posible iniciar sesión", []));
+  if (!passwordValido) {
+    throw RESP.InvalidCredentials();
   }
+
+  const token = await generarJWT(usuario.id, usuario.tokenVersion);
+  return RESP.Ok(
+    res,
+    { name: usuario.name, user: usuario.user, token },
+    "Autenticación correcta"
+  );
 };
 
-const refrescar_token = async (req = request, res = response) => {
-  const { uid } = req;
+const refrescarToken = async (req, res) => {
   const { password } = req.body;
 
   if (typeof password !== "string") {
-    return res
-      .status(400)
-      .json(Respuesta(400, "error", "La contraseña es obligatoria", []));
-  }
-
-  try {
-    const usuario = await UsuariosModel.findById(uid).select(
-      "+password +tokenVersion"
+    throw RESP.Validation(
+      "La contraseña es obligatoria",
+      { fields: ["password"] }
     );
-
-    if (!usuario || !(await bcrypt.compare(password, usuario.password))) {
-      return res
-        .status(401)
-        .json(Respuesta(401, "error", "La contraseña no es correcta", []));
-    }
-
-    const token = await generarJWT(usuario.id, usuario.tokenVersion);
-    return res
-      .status(200)
-      .json(Respuesta(200, "ok", "Sesión renovada correctamente", [token]));
-  } catch {
-    return res
-      .status(500)
-      .json(Respuesta(500, "error", "No fue posible renovar la sesión", []));
   }
+
+  const usuario = await UsuariosModel.findById(req.uid).select(
+    "+password +tokenVersion"
+  );
+
+  if (!usuario || !(await bcrypt.compare(password, usuario.password))) {
+    throw RESP.InvalidCredentials("La contraseña no es correcta");
+  }
+
+  const token = await generarJWT(usuario.id, usuario.tokenVersion);
+  return RESP.Ok(res, { token }, "Sesión renovada correctamente");
 };
 
-module.exports = { autentificarte, refrescar_token, registrar };
+module.exports = { autentificarte, refrescarToken, registrar };

@@ -21,6 +21,10 @@ plataformas.
 - Validación de entradas, rate limiting, Helmet, CORS configurable y límite de
   10 KB por solicitud.
 - Respuestas sin hash de contraseña ni versión de sesión.
+- Contrato HTTP central con errores tipados y `X-Request-Id`.
+- Rutas REST y códigos 200/201/204/4xx/5xx convencionales.
+- Catálogo `RESP` para no repetir estados ni códigos en controladores.
+- Logger HTTP global, legible y con datos sensibles redactados.
 
 ## Tecnologías
 
@@ -53,6 +57,7 @@ SEED_TOKEN=un_secreto_aleatorio_de_32_caracteres_o_mas
 JWT_EXPIRES_IN=6h
 CORS_ORIGINS=http://localhost:3021
 TRUST_PROXY=false
+HTTP_LOGS=true
 ```
 
 `BD_CNN` es la única fuente de la cadena de conexión. No se incluyen
@@ -75,14 +80,41 @@ La API estará disponible en `http://localhost:3024`.
 
 ## Autenticación
 
-Las rutas privadas esperan el JWT sin prefijo en:
+Las rutas privadas esperan el JWT con el esquema Bearer estándar:
 
 ```http
-Administracion: <token>
+Authorization: Bearer <token>
 ```
 
 El JWT contiene únicamente el identificador (`sub`), una versión de sesión
 (`ver`) y los claims estándar. Nunca contiene usuario ni contraseña.
+
+## Logging HTTP
+
+Con `HTTP_LOGS=true`, cada solicitud imprime un bloque al terminar:
+
+```text
+┌─ HTTP REQUEST ─────────────────────────────────────────
+│ ID:       5b9d...
+│ Método:   GET
+│ Ruta:     /plataformas
+│ Query:    {"search":"github"}
+│ Estado:   200 OK
+│ Duración: 12.34 ms
+│ Auth:     Autenticado (66ab...)
+│ IP:       ::1
+│ Error:    (ninguno)
+│ Agente:   Mozilla/5.0 ...
+└─────────────────────────────────────────────────────────
+```
+
+No se imprime el body ni el encabezado `Authorization`. Parámetros de query
+relacionados con contraseñas, tokens, secretos o claves se muestran como
+`[REDACTED]`. Puede desactivarse con `HTTP_LOGS=false`.
+
+El campo `Auth` diferencia entre ruta pública, token ausente, token inválido y
+usuario autenticado. Login, registro, `/health` y solicitudes preflight son
+rutas públicas y no tienen un usuario asociado.
 
 ## Estructura
 

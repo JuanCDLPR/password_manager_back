@@ -1,16 +1,17 @@
 const { Router } = require("express");
-const { validarJWT } = require("../middlewares/validar-jws");
-
 const {
-  consultar,
   actualizar,
-  update_pass,
+  actualizarPassword,
+  consultar,
 } = require("../controllers/perfil.controller");
+const { asyncHandler } = require("../helpers/async-handler");
+const { validarJWT } = require("../middlewares/validar-jws");
 
 const router = Router();
 
-router.get("/consultar", [validarJWT], consultar);
-router.post("/actualizar", [validarJWT], actualizar);
-router.post("/update_pass", [validarJWT], update_pass);
+router.use(validarJWT);
+router.get("/", asyncHandler(consultar));
+router.patch("/", asyncHandler(actualizar));
+router.patch("/password", asyncHandler(actualizarPassword));
 
 module.exports = { perfil: router };

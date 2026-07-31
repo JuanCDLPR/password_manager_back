@@ -8,7 +8,13 @@ config();
 
 const { getAllowedOrigins, validateEnvironment } = require("./config/env");
 const { dbConnection } = require("./connection/config-mongo");
-const { Respuesta } = require("./models/repuesta");
+const { RESP } = require("./helpers/http");
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("./middlewares/error-handler");
+const { requestContext } = require("./middlewares/request-context");
+const { httpLogger } = require("./middlewares/http-logger");
 const { perfil } = require("./routes/perfil.routes");
 const { plataformas } = require("./routes/plataformas.routes");
 const { usuarios } = require("./routes/usuarios.routes");
@@ -26,15 +32,18 @@ if (process.env.TRUST_PROXY === "true") {
 }
 
 app.use(helmet());
+app.use(requestContext);
+app.use(httpLogger);
 app.use(
   cors({
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Administracion"],
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
+    exposedHeaders: ["X-Request-Id"],
     origin(origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error("Origen no permitido por CORS"));
+      return callback(RESP.Forbidden("Origen no permitido por CORS"));
     },
   })
 );
@@ -42,32 +51,16 @@ app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 app.use(express.static("public"));
 
+app.get("/health", (_req, res) =>
+  RESP.Ok(res, { status: "ok" }, "Servicio disponible")
+);
+
 app.use("/usuarios", usuarios);
 app.use("/plataformas", plataformas);
 app.use("/perfil", perfil);
 
-app.use((_req, res) =>
-  res.status(404).json(Respuesta(404, "error", "Ruta no encontrada", []))
-);
-
-app.use((error, _req, res, _next) => {
-  if (error?.message === "Origen no permitido por CORS") {
-    return res
-      .status(403)
-      .json(Respuesta(403, "error", "Origen no permitido", []));
-  }
-
-  if (error?.type === "entity.too.large") {
-    return res
-      .status(413)
-      .json(Respuesta(413, "error", "La solicitud es demasiado grande", []));
-  }
-
-  console.error("Error no controlado:", error?.name || "Error");
-  return res
-    .status(500)
-    .json(Respuesta(500, "error", "Error interno del servidor", []));
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 let server;
 

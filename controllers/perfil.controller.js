@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
-const { request, response } = require("express");
 const { generarJWT } = require("../helpers/jwt");
+const { RESP } = require("../helpers/http");
 const {
   cleanString,
   isValidName,
@@ -9,132 +9,97 @@ const {
   isValidUser,
   normalizeUser,
 } = require("../helpers/validation");
-const { Respuesta } = require("../models/repuesta");
 const UsuariosModel = require("../models/usuarios.model");
 
-const consultar = async (req = request, res = response) => {
-  try {
-    const usuario = await UsuariosModel.findById(req.uid).select(
-      "name user img fecha actualizado"
-    );
+const consultar = async (req, res) => {
+  const usuario = await UsuariosModel.findById(req.uid).select(
+    "name user img fecha actualizado"
+  );
 
-    if (!usuario) {
-      return res
-        .status(404)
-        .json(Respuesta(404, "error", "No se encontró el usuario", []));
-    }
-
-    return res
-      .status(200)
-      .json(Respuesta(200, "ok", "Perfil encontrado", [usuario]));
-  } catch {
-    return res
-      .status(500)
-      .json(Respuesta(500, "error", "No fue posible consultar el perfil", []));
+  if (!usuario) {
+    throw RESP.NotFound("No se encontró el usuario");
   }
+
+  return RESP.Ok(res, usuario, "Perfil encontrado");
 };
 
-const actualizar = async (req = request, res = response) => {
+const actualizar = async (req, res) => {
   const name = cleanString(req.body.nombre);
   const user = normalizeUser(req.body.usuario);
   const img = cleanString(req.body.url);
 
-  if (
-    !isValidName(name) ||
-    !isValidUser(user) ||
-    !isValidOptionalHttpUrl(img)
-  ) {
-    return res
-      .status(400)
-      .json(Respuesta(400, "error", "Los datos del perfil no son válidos", []));
-  }
+  const invalidFields = [
+    ...(!isValidName(name) ? ["nombre"] : []),
+    ...(!isValidUser(user) ? ["usuario"] : []),
+    ...(!isValidOptionalHttpUrl(img) ? ["url"] : []),
+  ];
 
-  try {
-    const usuarioExistente = await UsuariosModel.exists({
-      user,
-      _id: { $ne: req.uid },
-    });
-
-    if (usuarioExistente) {
-      return res
-        .status(409)
-        .json(Respuesta(409, "error", "Este usuario ya existe", []));
-    }
-
-    const usuario = await UsuariosModel.findByIdAndUpdate(
-      req.uid,
-      { name, user, img, actualizado: new Date() },
-      { new: true, runValidators: true }
-    ).select("+tokenVersion");
-
-    if (!usuario) {
-      return res
-        .status(404)
-        .json(Respuesta(404, "error", "No se encontró el usuario", []));
-    }
-
-    const token = await generarJWT(usuario.id, usuario.tokenVersion);
-    return res.status(200).json(
-      Respuesta(200, "ok", "Perfil actualizado", [
-        { name: usuario.name, user: usuario.user, token },
-      ])
+  if (invalidFields.length) {
+    throw RESP.Validation(
+      "Los datos del perfil no son válidos",
+      { fields: invalidFields }
     );
-  } catch (error) {
-    if (error?.code === 11000) {
-      return res
-        .status(409)
-        .json(Respuesta(409, "error", "Este usuario ya existe", []));
-    }
-
-    return res
-      .status(500)
-      .json(Respuesta(500, "error", "No fue posible actualizar el perfil", []));
   }
+
+  const usuarioExistente = await UsuariosModel.exists({
+    user,
+    _id: { $ne: req.uid },
+  });
+
+  if (usuarioExistente) {
+    throw RESP.Conflict(
+      "Este usuario ya existe",
+      { fields: ["usuario"] }
+    );
+  }
+
+  const usuario = await UsuariosModel.findByIdAndUpdate(
+    req.uid,
+    { name, user, img, actualizado: new Date() },
+    { new: true, runValidators: true }
+  ).select("+tokenVersion");
+
+  if (!usuario) {
+    throw RESP.NotFound("No se encontró el usuario");
+  }
+
+  const token = await generarJWT(usuario.id, usuario.tokenVersion);
+  return RESP.Ok(
+    res,
+    { name: usuario.name, user: usuario.user, token },
+    "Perfil actualizado"
+  );
 };
 
-const update_pass = async (req = request, res = response) => {
+const actualizarPassword = async (req, res) => {
   const { old_pass: oldPassword, pass: password, rep_pass: repeat } = req.body;
 
   if (!isValidPassword(password) || password !== repeat) {
-    return res.status(400).json(
-      Respuesta(
-        400,
-        "error",
-        "La nueva contraseña debe tener entre 12 y 128 caracteres y coincidir",
-        []
-      )
+    throw RESP.Validation(
+      "La nueva contraseña debe tener entre 12 y 128 caracteres y coincidir",
+      { fields: ["pass", "rep_pass"] }
     );
   }
 
-  try {
-    const usuario = await UsuariosModel.findById(req.uid).select(
-      "+password +tokenVersion"
-    );
+  const usuario = await UsuariosModel.findById(req.uid).select(
+    "+password +tokenVersion"
+  );
 
-    if (
-      !usuario ||
-      typeof oldPassword !== "string" ||
-      !(await bcrypt.compare(oldPassword, usuario.password))
-    ) {
-      return res
-        .status(401)
-        .json(Respuesta(401, "error", "La contraseña actual no es correcta", []));
-    }
-
-    usuario.password = await bcrypt.hash(password, 12);
-    usuario.tokenVersion += 1;
-    usuario.actualizado = new Date();
-    await usuario.save();
-
-    const token = await generarJWT(usuario.id, usuario.tokenVersion);
-    return res
-      .status(200)
-      .json(Respuesta(200, "ok", "Contraseña actualizada", [token]));
-  } catch {
-    return res.status(500).json(
-      Respuesta(500, "error", "No fue posible actualizar la contraseña", [])
-    );
+  if (
+    !usuario ||
+    typeof oldPassword !== "string" ||
+    !(await bcrypt.compare(oldPassword, usuario.password))
+  ) {
+    throw RESP.InvalidCredentials("La contraseña actual no es correcta");
   }
+
+  usuario.password = await bcrypt.hash(password, 12);
+  usuario.tokenVersion += 1;
+  usuario.actualizado = new Date();
+  await usuario.save();
+
+  const token = await generarJWT(usuario.id, usuario.tokenVersion);
+  return RESP.Ok(res, { token }, "Contraseña actualizada");
 };
 
-module.exports = { actualizar, consultar, update_pass };
+module.exports = { actualizar, actualizarPassword, consultar };

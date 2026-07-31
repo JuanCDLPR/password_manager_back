@@ -14,6 +14,9 @@
 | Fuerza bruta | Rate limits separados para registro, login y renovación |
 | HTTP | Helmet, `x-powered-by` deshabilitado y body de 10 KB |
 | CORS | Lista de orígenes mediante `CORS_ORIGINS` |
+| Trazabilidad | `X-Request-Id` y `requestId` en todos los errores |
+| Errores | Contrato central sin stacks ni datos internos |
+| Logging | No registra body, JWT ni Authorization; redacta query sensible |
 | Dependencias | `npm audit`: 0 vulnerabilidades tras actualización |
 | Base de datos | Cadena únicamente en `BD_CNN`, `.env` ignorado por Git |
 
@@ -45,4 +48,3 @@ aplicación; solo un backup externo del proveedor podría restaurarla.
 4. Conviene rotar `SEED_TOKEN` al desplegar y almacenarlo en un secret manager.
 5. Falta logging de seguridad sin datos sensibles, monitoreo y alertas.
 6. Faltan pruebas de integración automatizadas con una base efímera y CI.
-

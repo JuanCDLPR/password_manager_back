@@ -1,4 +1,10 @@
 const { Router } = require("express");
+const {
+  autentificarte,
+  refrescarToken,
+  registrar,
+} = require("../controllers/usuarios.controller.mg");
+const { asyncHandler } = require("../helpers/async-handler");
 const { validarJWT } = require("../middlewares/validar-jws");
 const {
   authLimiter,
@@ -6,16 +12,15 @@ const {
   registerLimiter,
 } = require("../middlewares/rate-limit");
 
-const {
-  registrar,
-  autentificarte,
-  refrescar_token,
-} = require("../controllers/usuarios.controller.mg");
-
 const router = Router();
 
-router.post("/registrar", registerLimiter, registrar);
-router.post("/auth", authLimiter, autentificarte);
-router.post("/refresh", refreshLimiter, validarJWT, refrescar_token);
+router.post("/", registerLimiter, asyncHandler(registrar));
+router.post("/session", authLimiter, asyncHandler(autentificarte));
+router.post(
+  "/session/refresh",
+  refreshLimiter,
+  validarJWT,
+  asyncHandler(refrescarToken)
+);
 
 module.exports = { usuarios: router };

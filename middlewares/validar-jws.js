@@ -1,16 +1,17 @@
-const { request, response } = require("express");
 const jwt = require("jsonwebtoken");
 const { TOKEN_OPTIONS } = require("../helpers/jwt");
-const { Respuesta } = require("../models/repuesta");
+const { HttpError, RESP } = require("../helpers/http");
 const UsuariosModel = require("../models/usuarios.model");
 
-const validarJWT = async (req = request, res = response, next) => {
-  const token = req.header("Administracion");
+const validarJWT = async (req, _res, next) => {
+  req.authContext = { status: "missing" };
+  const authorization = req.header("Authorization") || "";
+  const [scheme, token] = authorization.split(" ");
 
-  if (!token) {
-    return res
-      .status(401)
-      .json(Respuesta(401, "error", "No se encontró el token", []));
+  if (scheme !== "Bearer" || !token) {
+    return next(
+      RESP.AuthRequired("Se requiere un token Bearer")
+    );
   }
 
   try {
@@ -18,17 +19,19 @@ const validarJWT = async (req = request, res = response, next) => {
     const usuario = await UsuariosModel.findById(sub).select("+tokenVersion");
 
     if (!usuario || usuario.tokenVersion !== ver) {
-      return res
-        .status(401)
-        .json(Respuesta(401, "error", "La sesión ya no es válida", []));
+      req.authContext = { status: "invalid" };
+      throw RESP.SessionInvalid("La sesión ya no es válida");
     }
 
     req.uid = usuario.id;
-    next();
-  } catch {
-    return res
-      .status(401)
-      .json(Respuesta(401, "error", "Token no válido o expirado", []));
+    req.authContext = { status: "authenticated", userId: usuario.id };
+    return next();
+  } catch (error) {
+    if (error instanceof HttpError) return next(error);
+    req.authContext = { status: "invalid" };
+    return next(
+      RESP.SessionInvalid("Token no válido o expirado")
+    );
   }
 };
 

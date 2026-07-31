@@ -1,20 +1,21 @@
 const { Router } = require("express");
-const { validarJWT } = require("../middlewares/validar-jws");
-
 const {
+  actualizar,
+  consultar,
+  eliminar,
   insertar,
   listar,
-  eliminar,
-  consultar,
-  actualizar,
 } = require("../controllers/plataformas.controller");
+const { asyncHandler } = require("../helpers/async-handler");
+const { validarJWT } = require("../middlewares/validar-jws");
 
 const router = Router();
 
-router.post("/insertar", [validarJWT], insertar);
-router.get("/listar", [validarJWT], listar);
-router.post("/eliminar", [validarJWT], eliminar);
-router.get("/consultar", [validarJWT], consultar);
-router.post("/actualizar", [validarJWT], actualizar);
+router.use(validarJWT);
+router.get("/", asyncHandler(listar));
+router.post("/", asyncHandler(insertar));
+router.get("/:id", asyncHandler(consultar));
+router.patch("/:id", asyncHandler(actualizar));
+router.delete("/:id", asyncHandler(eliminar));
 
 module.exports = { plataformas: router };

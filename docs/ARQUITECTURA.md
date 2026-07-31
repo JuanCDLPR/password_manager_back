@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     U[Usuario] --> F[React SPA]
-    F -->|JSON + Administracion| A[Express API]
+    F -->|JSON + Bearer token| A[Express API]
     A --> H[Helmet / CORS / límites]
     H --> J[Middleware JWT]
     J --> C[Controladores]
@@ -26,8 +26,16 @@ flowchart LR
 - `middlewares/validar-jws.js`: verifica firma, audiencia, emisor, expiración y
   versión de sesión.
 - `middlewares/rate-limit.js`: limita registro, login y renovación.
+- `middlewares/request-context.js`: asigna o propaga `X-Request-Id`.
+- `middlewares/error-handler.js`: normaliza errores de aplicación, Express y
+  Mongoose en un solo contrato.
+- `middlewares/http-logger.js`: registra todas las solicitudes al finalizar,
+  con estado, duración, usuario y código de error, sin secretos.
 - `controllers/`: valida entradas y aplica autorización a nivel de documento.
 - `models/`: define usuario y plataforma. Los campos sensibles están ocultos.
+- `config/http-catalog.js`: única fuente de estados, códigos y mensajes HTTP.
+- `helpers/http.js`: expone la API `RESP` para éxitos y errores semánticos.
+- `helpers/async-handler.js`: envía rechazos asíncronos al middleware central.
 
 El servidor espera la conexión MongoDB antes de escuchar y cierra servidor y
 conexión ordenadamente ante `SIGINT` o `SIGTERM`.
@@ -69,10 +77,14 @@ Cada consulta, actualización y eliminación usa simultáneamente `_id` e
 
 ## Frontend
 
-`REACT_APP_API_URL` define la API. El cliente HTTP está centralizado, acepta
-respuestas 2xx, envía solo `Content-Type` y `Administracion`, y conserva los
-mensajes JSON del backend. Al salir elimina únicamente `JWT`, `nombre` y `user`.
+`REACT_APP_API_URL` define la API. El cliente HTTP ofrece métodos `get`, `post`,
+`patch` y `delete`; devuelve respuestas exitosas y lanza `ApiError` para HTTP,
+contrato inválido o red. Así todos los módulos consumen `status`, `code`,
+`message`, `details` y `requestId` de la misma forma.
+
+Las rutas siguen una convención REST: recursos en plural, identificadores en el
+path y filtros en query string. Al salir se eliminan únicamente `JWT`, `nombre`
+y `user`.
 
 El JWT aún se guarda en `localStorage`; migrarlo a una cookie `HttpOnly` requiere
 rediseñar conjuntamente autenticación, CORS y protección CSRF.
-
