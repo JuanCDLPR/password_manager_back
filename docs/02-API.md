@@ -66,7 +66,7 @@ correlaciona el error con logs y también se entrega en `X-Request-Id`.
 ## Catálogo y helper RESP
 
 La relación entre tipo, estado HTTP, código y mensaje predeterminado vive
-exclusivamente en `config/http-catalog.js`. Los controladores no escriben
+exclusivamente en `src/shared/http/catalog.js`. Los controladores no escriben
 números HTTP ni construyen errores manualmente.
 
 ```js

@@ -1,13 +1,13 @@
 const assert = require("node:assert/strict");
 const { EventEmitter } = require("node:events");
 const test = require("node:test");
-const { RESP } = require("../helpers/http");
+const { RESP } = require("../src/shared/http/response");
 const {
   formatAuthentication,
   httpLogger,
   sanitizePath,
   sanitizeQuery,
-} = require("../middlewares/http-logger");
+} = require("../src/shared/middleware/http-logger");
 
 test("RESP obtiene estado, código y mensaje desde el catálogo", () => {
   const error = RESP.Validation("Nombre inválido", { fields: ["name"] });

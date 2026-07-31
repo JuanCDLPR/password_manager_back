@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const jwt = require("jsonwebtoken");
-const { generarJWT, TOKEN_OPTIONS } = require("../helpers/jwt");
+const {
+  generarJWT,
+  TOKEN_OPTIONS,
+} = require("../src/modules/auth/jwt");
 const {
   isValidEmail,
   isValidOptionalHttpUrl,
@@ -9,9 +12,11 @@ const {
   isValidUser,
   normalizeEmail,
   normalizeUser,
-} = require("../helpers/validation");
-const { requireRole } = require("../middlewares/require-role");
-const UsuariosModel = require("../models/usuarios.model");
+} = require("../src/shared/validation");
+const {
+  requireRole,
+} = require("../src/modules/auth/require-role.middleware");
+const UserModel = require("../src/modules/users/user.model");
 
 test("normaliza y valida nombres de usuario", () => {
   assert.equal(normalizeUser("  Usuario.Demo  "), "usuario.demo");
@@ -56,7 +61,7 @@ test("el JWT contiene únicamente identificador y versión de sesión", async ()
 });
 
 test("el modelo de usuario no serializa campos sensibles", () => {
-  const usuario = new UsuariosModel({
+  const usuario = new UserModel({
     name: "Usuario Demo",
     user: "usuario.demo",
     password: "hash",

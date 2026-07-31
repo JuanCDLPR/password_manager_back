@@ -19,27 +19,24 @@ flowchart LR
 
 ## Backend
 
-- `config/env.js`: valida conexión, base por ambiente, correo, JWT y puerto;
-  obtiene orígenes permitidos.
-- `connection/config-mongo.js`: abre exclusivamente la conexión indicada por
-  `BD_CNN`.
-- `middlewares/validar-jws.js`: verifica firma, audiencia, emisor, expiración y
-  versión de sesión.
-- `middlewares/rate-limit.js`: limita registro, login y renovación.
-- `middlewares/request-context.js`: asigna o propaga `X-Request-Id`.
-- `middlewares/error-handler.js`: normaliza errores de aplicación, Express y
-  Mongoose en un solo contrato.
-- `middlewares/http-logger.js`: registra todas las solicitudes al finalizar,
-  con estado, duración, usuario y código de error, sin secretos.
-- `controllers/`: valida entradas y aplica autorización a nivel de documento.
-- `models/`: define usuario y plataforma. Los campos sensibles están ocultos.
-- `services/invitation.service.js`: genera tokens, hashes, expiraciones y URLs.
-- `config/http-catalog.js`: única fuente de estados, códigos y mensajes HTTP.
-- `helpers/http.js`: expone la API `RESP` para éxitos y errores semánticos.
-- `helpers/async-handler.js`: envía rechazos asíncronos al middleware central.
+- `src/app.js`: configura Express y monta las rutas de cada módulo.
+- `src/server.js`: conecta MongoDB, escucha el puerto y cierra ordenadamente.
+- `src/config/env.js`: valida conexión, ambiente, correo, JWT y puerto.
+- `src/database/mongo.js`: abre exclusivamente la conexión configurada.
+- `src/modules/auth/`: verifica JWT, versión de sesión, estado y roles.
+- `src/modules/users/`: registro invitado, login y consulta de sesión.
+- `src/modules/profile/`: perfil y cambio de contraseña.
+- `src/modules/platforms/`: modelo y CRUD aislado por propietario.
+- `src/modules/invitations/`: tokens, modelo, administración y consumo.
+- `src/modules/email/`: Mailgun, catálogo de templates y HTML.
+- `src/modules/admin/`: composición de endpoints para `superadmin`.
+- `src/shared/http/`: catálogo HTTP, `RESP` y manejo asíncrono.
+- `src/shared/middleware/`: logging, errores, rate limits y request ID.
+- `src/shared/validation/`: funciones puras utilizadas por varios módulos.
 
-El servidor espera la conexión MongoDB antes de escuchar y cierra servidor y
-conexión ordenadamente ante `SIGINT` o `SIGTERM`.
+Las dependencias compartidas no importan módulos de negocio. `app.js` compone la
+aplicación y `server.js` espera MongoDB antes de escuchar. Consulta
+[Organización del código](12-ESTRUCTURA-SRC.md).
 
 ## Modelos
 

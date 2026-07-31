@@ -1,13 +1,15 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const InvitacionesModel = require("../models/invitaciones.model");
+const InvitationModel = require(
+  "../src/modules/invitations/invitation.model"
+);
 const {
   buildInvitationUrl,
   createInvitationToken,
   getInvitationExpiration,
   hashInvitationToken,
   isValidInvitationToken,
-} = require("../services/invitation.service");
+} = require("../src/modules/invitations/invitation.service");
 
 test("genera tokens aleatorios de 256 bits en base64url", () => {
   const first = createInvitationToken();
@@ -61,7 +63,7 @@ test("calcula la expiración con el límite configurado", () => {
 });
 
 test("el modelo nunca serializa tokenHash ni activeEmail", () => {
-  const invitation = new InvitacionesModel({
+  const invitation = new InvitationModel({
     email: "persona@example.com",
     invitedName: "Persona",
     tokenHash: "a".repeat(64),

@@ -136,16 +136,27 @@ rutas públicas y no tienen un usuario asociado.
 ## Estructura
 
 ```text
-config/       Validación y lectura segura del entorno
-connection/   Conexión MongoDB
-controllers/  Casos de uso y consultas Mongoose
-helpers/      JWT y validación reutilizable
-middlewares/  Sesión y límites de frecuencia
-models/       Esquemas Mongoose y formato de respuesta
-routes/       Endpoints
-test/         Pruebas automatizadas de seguridad
-docs/         Arquitectura, API, seguridad y hoja de ruta
-index.js      Configuración e inicio ordenado del servidor
+src/
+  app.js                  Configuración y composición de Express
+  server.js               Conexión MongoDB y ciclo de vida del proceso
+  config/                 Validación del entorno
+  database/               Infraestructura de MongoDB
+  modules/
+    admin/                Endpoints administrativos
+    auth/                 JWT, autenticación y roles
+    email/                Mailgun, templates y renderizado
+    invitations/          Invitaciones y registro privado
+    platforms/            CRUD de plataformas
+    profile/              Perfil y cambio de contraseña
+    users/                Cuenta, registro y sesión
+  shared/
+    http/                 Catálogo, RESP y async handler
+    middleware/           Errores, logs, rate limits y request ID
+    validation/           Validaciones compartidas
+  scripts/                Bootstrap admin y prueba de correo
+docs/                     Documentación numerada
+public/                   Archivos estáticos
+test/                     Pruebas automatizadas
 ```
 
 ## Documentación
@@ -162,6 +173,7 @@ index.js      Configuración e inicio ordenado del servidor
 - [09. Templates HTML de correo](docs/09-PLANTILLAS-CORREO.md)
 - [10. Invitaciones y registro privado](docs/10-INVITACIONES.md)
 - [11. Configuración y despliegue](docs/11-DESPLIEGUE-PRODUCCION.md)
+- [12. Organización del código en src](docs/12-ESTRUCTURA-SRC.md)
 
 ## Frontend
 

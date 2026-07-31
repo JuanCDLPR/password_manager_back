@@ -13,6 +13,7 @@ Estado actualizado al **30 de julio de 2026**.
 - [09. Templates HTML de correo](09-PLANTILLAS-CORREO.md)
 - [10. Invitaciones y registro privado](10-INVITACIONES.md)
 - [11. Configuración y despliegue de producción](11-DESPLIEGUE-PRODUCCION.md)
+- [12. Organización del código en src](12-ESTRUCTURA-SRC.md)
 - [README del backend](../README.md)
 - [README del frontend](../../password_manager/README.md)
 

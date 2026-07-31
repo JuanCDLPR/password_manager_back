@@ -5,7 +5,9 @@ Actualizado el 30 de julio de 2026.
 Los correos se renderizan por nombre mediante:
 
 ```js
-const { renderEmailTemplate } = require("../services/email-template.service");
+const {
+  renderEmailTemplate,
+} = require("../src/modules/email/email-template.service");
 
 const content = await renderEmailTemplate("configuration-test", {
   appName: "Password Manager",
@@ -30,7 +32,7 @@ await sendTemplateMail({
 
 ## Convenciones
 
-- Los archivos HTML viven en `templates/email/`.
+- Los archivos HTML viven en `src/modules/email/templates/`.
 - Cada template debe declararse en `TEMPLATE_CATALOG`; no se aceptan rutas
   recibidas desde una petición.
 - Handlebars escapa las propiedades insertadas en HTML.

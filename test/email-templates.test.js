@@ -3,7 +3,7 @@ const test = require("node:test");
 const {
   EmailTemplateError,
   renderEmailTemplate,
-} = require("../services/email-template.service");
+} = require("../src/modules/email/email-template.service");
 
 const validData = {
   appName: "Password Manager",

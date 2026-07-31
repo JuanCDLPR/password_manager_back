@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { validateDatabaseEnvironment } = require("../config/env");
+const {
+  validateDatabaseEnvironment,
+} = require("../src/config/env");
 
 const withEnvironment = (values, callback) => {
   const original = {

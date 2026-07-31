@@ -9,7 +9,7 @@ process.env.SEED_TOKEN ||= "test_seed_with_more_than_32_characters";
 process.env.NODE_ENV = "test";
 process.env.HTTP_LOGS = "false";
 
-const { app } = require("../index");
+const { app } = require("../src/app");
 
 let server;
 let baseUrl;
